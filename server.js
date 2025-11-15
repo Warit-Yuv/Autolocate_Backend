@@ -1,12 +1,18 @@
 import express from 'express'
 import dotenv from 'dotenv'
-import userRouter from './routes/user.js'
+import cors from 'cors'
+import tenantRouter from './routes/tenant.js'
 import adminRouter from './routes/admin.js'
 import staffRouter from './routes/staff.js'
 dotenv.config()
 
 const app = express()
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3001
+app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(express.json());
+app.use('/api/tenant', tenantRouter)
+app.use('/api/staff', staffRouter)
+app.use('/api/admin', adminRouter)
 app.set('view engine', 'ejs')
 
 app.get('/', (req, res) => {
@@ -28,7 +34,7 @@ app.get('/rr', (req, res) => {
   `);
 });
 
-app.use('/users', userRouter)
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
