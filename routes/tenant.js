@@ -12,6 +12,28 @@ router.get('/auth', (req, res) => {
     res.status(200).send('Tenant auth GET endpoint.');
 });
 
+//test if DB connection works - typing /api/tenant/test-db-connection should return success message
+router.get('/test-db-connection', async (req, res) => {
+    try {
+        const [rows] = await tenantPool.execute('SELECT 1');
+        res.status(200).json({ message: 'Database connection successful', rows });
+    } catch (err) {
+        console.error('Database connection test failed:', err);
+        res.status(500).json({ error: 'Database connection failed' });
+    }
+});
+
+//try select * from Tenant table - typing /api/tenant/tenants should return all tenants
+router.get('/tenants', async (req, res) => {
+    try {
+        const [rows] = await tenantPool.execute('SELECT * FROM Tenant');
+        res.status(200).json({ tenants: rows });
+    } catch (err) {
+        console.error('Error fetching tenants:', err);
+        res.status(500).json({ error: 'Error fetching tenants' });
+    }
+});
+
 // Tenant login (uses tenant DB user)
 router.post('/auth', async (req, res) => {
     const { username, password } = req.body || {}
@@ -21,19 +43,22 @@ router.post('/auth', async (req, res) => {
     console.log(`Tenant login attempt for username: ${username}`);
     console.log(`Password provided: ${password}`);
     try {
-        // const [rows] = await tenantPool.execute(
-        //     'SELECT tenant_id, username, password_hash, first_name, last_name FROM Tenant WHERE username = ?',
-        //     [username]
-        // )
-        // if (!rows || rows.length === 0) {
-        //     return res.status(401).json({ error: 'Invalid credentials' })
-        // }
-        // const user = rows[0]
-        // const match = await bcrypt.compare(password, user.password_hash)
-        // if (!match) {
-        //     return res.status(401).json({ error: 'Invalid credentials' })
-        // }
-        // Successful authentication - do not return password_hash
+        const [rows] = await tenantPool.execute(
+            'SELECT tenant_id, username, password_hash, first_name, last_name FROM Tenant WHERE username = ?',
+            [username]
+        )
+        if (!rows || rows.length === 0) {
+            console.log(`No user found with username: ${username}`);
+            return res.status(401).json({ error: 'Invalid credentials' })
+        }
+        const user = rows[0]
+        const match = await bcrypt.compare(password, user.password_hash)
+        if (!match) {
+            console.log(`Password mismatch for username: ${username}`);
+            return res.status(401).json({ error: 'Invalid credentials' })
+        }
+        //Successful authentication - do not return password_hash
+        console.log(`Tenant '${username}' authenticated successfully.`);
         return res.status(200).json({
             message: 'Authenticated',
             user: { tenant_id: user.tenant_id, username: user.username, first_name: user.first_name, last_name: user.last_name },
