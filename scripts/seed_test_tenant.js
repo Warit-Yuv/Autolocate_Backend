@@ -5,8 +5,8 @@ import { adminPool } from '../db.js'
 dotenv.config()
 
 async function seed() {
-  const username = process.env.SEED_TENANT_USERNAME || 'root'
-  const password = process.env.SEED_TENANT_PASSWORD || 'root'
+  const username = process.env.SEED_TENANT_USERNAME || 'test_tenant'
+  const password = process.env.SEED_TENANT_PASSWORD || bcrypt.hash('t1234',10)
   const first_name = process.env.SEED_TENANT_FIRST_NAME || 'Test'
   const last_name = process.env.SEED_TENANT_LAST_NAME || 'Tenant'
 
