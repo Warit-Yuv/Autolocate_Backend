@@ -34,6 +34,15 @@ app.get('/rr', (req, res) => {
   `);
 });
 
+// Test bcrypt hashing endpoint where when visits /hashme?password=yourpassword it returns the hashed password
+app.get('/hashme', async (req, res) => {
+    const bcrypt = await import('bcrypt');
+    const password = req.query.password || 'default_password';
+    const saltRounds = 10;
+
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    res.send(`Hashed password: ${hashedPassword}`);
+});
 
 
 app.listen(port, () => {
