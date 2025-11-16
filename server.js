@@ -1,18 +1,23 @@
 import express from 'express'
 import dotenv from 'dotenv'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import tenantRouter from './routes/tenant.js'
 import adminRouter from './routes/admin.js'
 import staffRouter from './routes/staff.js'
+import authRouter from './routes/auth.js'
 dotenv.config()
 
 const app = express()
 const port = process.env.PORT || 3001
-app.use(cors({ origin: 'http://localhost:3000' }));
+// Allow frontend at localhost:3000 to send cookies (credentials)
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cookieParser())
 app.use(express.json());
 app.use('/api/tenant', tenantRouter)
 app.use('/api/staff', staffRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/auth', authRouter)
 app.set('view engine', 'ejs')
 
 app.get('/', (req, res) => {

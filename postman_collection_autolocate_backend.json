@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "AutoLocate Backend - API Tests",
+    "_postman_id": "autolocate-backend-collection",
+    "description": "Collection for testing AutoLocate Backend APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001"
+    }
+  ],
+  "item": [
+    {
+      "name": "Tenant - Login (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"test1\",\n  \"password\": \"test1\"\n}"
+        },
+        "url": "{{baseUrl}}/api/tenant/auth"
+      }
+    },
+    {
+      "name": "Staff - Login (POST)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"janesmith\",\n  \"password\": \"staff123\"\n}" },
+        "url": "{{baseUrl}}/api/staff/auth"
+      }
+    },
+    {
+      "name": "Admin - Login (POST)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"johndoe\",\n  \"password\": \"admin123\"\n}" },
+        "url": "{{baseUrl}}/api/admin/auth"
+      }
+    },
+    {
+      "name": "Auth - Me (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/auth/me"
+      }
+    },
+    {
+      "name": "Auth - Logout (POST)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/auth/logout"
+      }
+    },
+    {
+      "name": "Tenant - DB Connection Test (GET)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/tenant/test-db-connection" }
+    },
+    {
+      "name": "Tenant - List Tenants (GET)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/tenant/tenants" }
+    },
+    {
+      "name": "Admin - Create Tenant (POST)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"new_tenant\",\n  \"password\": \"newpass\",\n  \"first_name\": \"New\",\n  \"last_name\": \"Tenant\",\n  \"email\": \"new@example.com\"\n}" },
+        "url": "{{baseUrl}}/api/admin/tenants"
+      }
+    },
+    {
+      "name": "Admin - Create Staff (POST)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"new_staff\",\n  \"password\": \"staffpass\",\n  \"first_name\": \"Staff\",\n  \"last_name\": \"Member\",\n  \"position\": \"guard\",\n  \"access_level\": \"staff\"\n}" },
+        "url": "{{baseUrl}}/api/admin/staff"
+      }
+    }
+  ]
+}

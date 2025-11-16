@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const common = {
+const DB_Config_common = {
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
   database: process.env.DB_NAME || 'CondoParkingDB',
@@ -13,19 +13,19 @@ const common = {
 }
 
 export const adminPool = mysql.createPool({
-  ...common,
+  ...DB_Config_common,
   user: process.env.ADMIN_DB_USER || 'admin_user',
   password: process.env.ADMIN_DB_PASS || 'admin_pass',
 })
 
 export const staffPool = mysql.createPool({
-  ...common,
+  ...DB_Config_common,
   user: process.env.STAFF_DB_USER || 'staff_user',
   password: process.env.STAFF_DB_PASS || 'staff_pass',
 })
 
 export const tenantPool = mysql.createPool({
-  ...common,
+  ...DB_Config_common,
   user: process.env.TENANT_DB_USER || 'tenant_user',
   password: process.env.TENANT_DB_PASS || 'tenant_pass',
 })
