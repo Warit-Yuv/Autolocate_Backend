@@ -25,6 +25,7 @@ router.post('/auth', async (req, res) => {
         // For testing convenience we may also include the token in the response body when
         // NODE_ENV !== 'production' or JWT_SEND_IN_BODY=true. In production we still only use the cookie.
         const token = issueToken(res, { sub: user.staff_id, role: 'staff' })
+        console.log(`Issued token for staff_id: ${user.staff_id}`);
         const sendTokenInBody = process.env.JWT_SEND_IN_BODY === 'true' || process.env.NODE_ENV !== 'production'
         const responsePayload = {
             message: 'Authenticated (staff)',

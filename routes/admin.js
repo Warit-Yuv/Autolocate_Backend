@@ -117,4 +117,25 @@ router.patch('/staff/:id', jwtAuth, requireRole('admin','super-admin'), async (r
     }
 })
 
+// Select all staff (admin and super-admin only)
+// GET https://testapi.notonoty.me/api/admin/staff-info
+router.get('/staff-info', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
+    try {
+        const [rows] = await adminPool.execute(`
+            SELECT staff_id,
+            first_name, last_name,
+            position,
+            username,
+            password_hash,
+            access_level,
+            is_Active
+            FROM Staff
+            `)
+        res.status(200).json({ staff: rows })
+    } catch (err) {
+        console.error('Admin get staff error:', err)
+        res.status(500).json({ error: 'Server error' })
+    }
+})
+
 export default router
