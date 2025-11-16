@@ -20,7 +20,7 @@ router.post('/auth', async (req, res) => {
         if (!match) return res.status(401).json({ error: 'Invalid credentials' })
         // Issue token with staff role
         issueToken(res, { sub: user.staff_id, role: 'staff' })
-        return res.status(200).json({ message: 'Authenticated (staff)', user: { staff_id: user.staff_id, username: user.username, access_level: user.access_level } })
+        return res.status(200).json({ message: 'Authenticated (staff)', user: { staff_id: user.staff_id, username: user.username, access_level: user.access_level , first_name: user.first_name, last_name: user.last_name ,position: user.position} })
     } catch (err) {
         console.error('Staff auth error:', err)
         return res.status(500).json({ error: 'Server error' })

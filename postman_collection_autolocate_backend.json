@@ -1,90 +1,271 @@
 {
-  "info": {
-    "name": "AutoLocate Backend - API Tests",
-    "_postman_id": "autolocate-backend-collection",
-    "description": "Collection for testing AutoLocate Backend APIs",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3001"
-    }
-  ],
-  "item": [
-    {
-      "name": "Tenant - Login (POST)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"username\": \"test1\",\n  \"password\": \"test1\"\n}"
-        },
-        "url": "{{baseUrl}}/api/tenant/auth"
-      }
-    },
-    {
-      "name": "Staff - Login (POST)",
-      "request": {
-        "method": "POST",
-        "header": [ { "key": "Content-Type", "value": "application/json" } ],
-        "body": { "mode": "raw", "raw": "{\n  \"username\": \"janesmith\",\n  \"password\": \"staff123\"\n}" },
-        "url": "{{baseUrl}}/api/staff/auth"
-      }
-    },
-    {
-      "name": "Admin - Login (POST)",
-      "request": {
-        "method": "POST",
-        "header": [ { "key": "Content-Type", "value": "application/json" } ],
-        "body": { "mode": "raw", "raw": "{\n  \"username\": \"johndoe\",\n  \"password\": \"admin123\"\n}" },
-        "url": "{{baseUrl}}/api/admin/auth"
-      }
-    },
-    {
-      "name": "Auth - Me (GET)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/auth/me"
-      }
-    },
-    {
-      "name": "Auth - Logout (POST)",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": "{{baseUrl}}/api/auth/logout"
-      }
-    },
-    {
-      "name": "Tenant - DB Connection Test (GET)",
-      "request": { "method": "GET", "url": "{{baseUrl}}/api/tenant/test-db-connection" }
-    },
-    {
-      "name": "Tenant - List Tenants (GET)",
-      "request": { "method": "GET", "url": "{{baseUrl}}/api/tenant/tenants" }
-    },
-    {
-      "name": "Admin - Create Tenant (POST)",
-      "request": {
-        "method": "POST",
-        "header": [ { "key": "Content-Type", "value": "application/json" } ],
-        "body": { "mode": "raw", "raw": "{\n  \"username\": \"new_tenant\",\n  \"password\": \"newpass\",\n  \"first_name\": \"New\",\n  \"last_name\": \"Tenant\",\n  \"email\": \"new@example.com\"\n}" },
-        "url": "{{baseUrl}}/api/admin/tenants"
-      }
-    },
-    {
-      "name": "Admin - Create Staff (POST)",
-      "request": {
-        "method": "POST",
-        "header": [ { "key": "Content-Type", "value": "application/json" } ],
-        "body": { "mode": "raw", "raw": "{\n  \"username\": \"new_staff\",\n  \"password\": \"staffpass\",\n  \"first_name\": \"Staff\",\n  \"last_name\": \"Member\",\n  \"position\": \"guard\",\n  \"access_level\": \"staff\"\n}" },
-        "url": "{{baseUrl}}/api/admin/staff"
-      }
-    }
-  ]
+	"info": {
+		"_postman_id": "47e1eeee-23e4-4315-af0e-ba97674c9ad2",
+		"name": "AutoLocate Backend - API Tests",
+		"description": "Collection for testing AutoLocate Backend APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "50071949",
+		"_collection_link": "https://notyzaa-7543561.postman.co/workspace/%E0%B8%AA%E0%B8%A1%E0%B8%99%E0%B8%95-%E0%B8%9C%E0%B8%B4%E0%B8%A7%E0%B8%94%E0%B8%B5's-Workspace~1619f901-8949-4e02-8215-74446398592d/collection/50071949-47e1eeee-23e4-4315-af0e-ba97674c9ad2?action=share&source=collection_link&creator=50071949"
+	},
+	"item": [
+		{
+			"name": "Tenant - Login (POST)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"test1\",\n  \"password\": \"test1\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/tenant/auth",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"tenant",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Staff - Login (POST)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"staff1\",\n  \"password\": \"staffpass\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/staff/auth",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"staff",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - Login (POST)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"adminpass\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/auth",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Me (GET)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/me",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"me"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Logout (POST)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/logout",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tenant - DB Connection Test (GET)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/tenant/test-db-connection",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"tenant",
+						"test-db-connection"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tenant - List Tenants (GET)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/hashme?password=admin123",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"hashme"
+					],
+					"query": [
+						{
+							"key": "password",
+							"value": "admin123"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - Create Tenant (POST)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"new_tenant\",\n  \"password\": \"newpass\",\n  \"first_name\": \"New\",\n  \"last_name\": \"Tenant\",\n  \"email\": \"new@example.com\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/tenants",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"tenants"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - Create Staff (POST)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"new_staff\",\n  \"password\": \"staffpass\",\n  \"first_name\": \"Staff\",\n  \"last_name\": \"Member\",\n  \"position\": \"guard\",\n  \"access_level\": \"staff\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/staff",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"staff"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tenant - Carlocation",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"test1\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/tenant/carlocation",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"tenant",
+						"carlocation"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3001"
+		},
+		{
+			"key": "NotoUrl",
+			"value": "",
+			"type": "default"
+		}
+	]
 }

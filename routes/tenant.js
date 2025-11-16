@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/auth', (req, res) => {
-    res.status(200).send('Tenant auth GET endpoint.');
+    res.status(401).send('Unauthorized access to tenant endpoint. Use POST to authenticate.');
 });
 
 //test if DB connection works - typing /api/tenant/test-db-connection should return success message
@@ -69,7 +69,31 @@ router.post('/auth', async (req, res) => {
         console.error('Tenant auth error:', err)
         return res.status(500).json({ error: 'Server error' })
     }
-})
+});
+
+// Tenent retrieve parking slots
+router.post('/carlocation', jwtAuth, requireRole('tenant','staff','admin','super-admin'), async (req, res) => {
+    const { username } = req.body || {}
+    if (!username) {
+        return res.status(400).json({ error: 'Missing username' })
+    }
+    try {
+        const [rows] = await tenantPool.execute(
+            `SELECT ps.parking_slot_id as parking_slot_id, ps.floor as floor, c.license_number as license_number
+            FROM parking_slot ps
+            JOIN parking_log pl ON ps.parking_slot_id = pl.parking_slot_id
+            JOIN rfid_tag rt ON pl.scanned_rfid_tid = rt.rfid_tid
+            JOIN car c ON rt.license_number = c.license_number
+            JOIN condo_room cr ON c.license_number = cr.license_number
+            JOIN tenant t ON cr.room_id = t.room_id
+            WHERE t.username = ?`, [username]
+        );
+        res.status(200).json({ carLocations: rows });
+    } catch (err) {
+        console.error('Error fetching car locations:', err);
+        res.status(500).json({ error: 'Error fetching car locations' });
+    }
+});
 
 
 export default router

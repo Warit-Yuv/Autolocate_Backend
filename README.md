@@ -50,7 +50,7 @@ All endpoints are mounted under `/api`.
 - Auth endpoints
   - POST `/api/tenant/auth` — tenant login. Body: `{ username, password }`. On success sets an HttpOnly JWT cookie and returns user info.
   - POST `/api/staff/auth` — staff login. Body: `{ username, password }`. Sets JWT cookie with role `staff`.
-  - POST `/api/admin/auth` — admin login. Body: `{ username, password }`. Sets JWT cookie with role `admin`.
+  - POST `/api/admin/auth` — admin login. Body: `{ username, password }`. Sets JWT cookie with role `admin` or `super-admin` depending on the DB `access_level`.
   - GET `/api/auth/me` — returns `{ user: { id, role } }` from verified token. Requires cookie; returns 401 if missing/invalid.
   - POST `/api/auth/logout` — clears JWT cookie.
 
@@ -60,36 +60,26 @@ All endpoints are mounted under `/api`.
   - POST `/api/tenant/auth` — tenant login (see above).
 
 - Admin endpoints (admin-only — require valid JWT and `role === 'admin'`)
-  - POST `/api/admin/tenants` — create a new tenant. Body: `{ username, password, first_name?, last_name?, email? }`.
+  - POST `/api/admin/tenants` — create a new tenant. Body: `{ username, password, first_name?, last_name?, email? }`. This endpoint accepts both `admin` and `super-admin` roles.
   - POST `/api/admin/staff` — create a new staff. Body: `{ username, password, first_name?, last_name?, position?, access_level?, is_Active? }`.
+    - Creating/promoting to `Admin` or `Super-Admin` requires the caller to be `super-admin`.
+  - PATCH `/api/admin/staff/:id` — modify a staff user's `access_level`. Promoting to or modifying admin-level users requires `super-admin`.
 
 - Staff endpoints
   - POST `/api/staff/auth` — staff login (see above).
 
 ## How auth works (JWT cookie)
 
-- On successful login the server signs a JWT with `{ sub: <userId>, role: 'tenant'|'staff'|'admin' }` and sets it in an HttpOnly cookie (name `token` by default).
+- On successful login the server signs a JWT with `{ sub: <userId>, role: 'tenant'|'staff'|'admin'|'super-admin' }` and sets it in an HttpOnly cookie (name `token` by default).
 - On protected routes the server reads the cookie, verifies the token, and sets `req.user = { id, role }`.
-- For admin-only actions, the middleware `requireRole('admin')` ensures the token's role is `admin`.
+- For admin-only actions, `requireRole('admin','super-admin')` is used where appropriate; actions that create or promote admin-level accounts require `super-admin`.
 - Frontend requests must include credentials to receive/send the cookie: `fetch(url, { credentials: 'include' })`.
-
-## What happens if we don't implement token blacklisting?
-
-- Without blacklisting, JWTs remain valid until they expire. If a token is stolen (or a user logs out but the token remains valid on the client), an attacker can continue to use it until expiry.
-- Common mitigations:
-  - Issue short-lived access tokens (e.g. 15 minutes) and use refresh tokens (stored securely) to obtain new access tokens.
-  - Maintain a server-side revocation/blacklist (Redis) keyed by token `jti` or token ID when immediate revocation is required (logout, credential compromise). `jwtAuth` must check the blacklist on every request.
-  - For many apps, short access token lifetimes + refresh token rotation provides a good balance.
-
-## Recommended flows
-
-- Simple / recommended for web apps: keep JWT in HttpOnly cookie, short access lifetime, implement a refresh token endpoint (longer lifetime) and rotate refresh tokens on use. Store refresh tokens server-side if you want immediate revocation.
-- Simpler alternative for quick projects: use `express-session` with a server-side store (Redis). Sessions are easy to invalidate on logout.
 
 ## Testing
 
 - Start server: `npm run dev` or `npm start`.
 - Login from the frontend or use `curl`/Postman with cookies enabled. Example using `fetch` from browser console:
+
 ```js
 fetch('http://localhost:3001/api/tenant/auth', {
   method: 'POST',
