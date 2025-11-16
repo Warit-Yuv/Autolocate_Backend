@@ -1,6 +1,6 @@
 import express from 'express'
 import bcrypt from 'bcrypt'
-import { tenantPool, adminPool } from '../db.js'
+import { tenantPool, staffPool, adminPool } from '../db.js'
 import { issueToken, jwtAuth, requireRole } from '../middleware/auth.js'
 
 const router = express.Router()
