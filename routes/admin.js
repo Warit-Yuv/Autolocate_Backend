@@ -23,7 +23,9 @@ router.post('/auth', async (req, res) => {
         if (!isAdmin) return res.status(403).json({ error: 'Not an admin' })
         const match = await bcrypt.compare(password, user.password_hash)
         if (!match) return res.status(401).json({ error: 'Invalid credentials' })
-        // Issue token with role according to access_level (admin or super-admin)
+        // Issue token with role according to access_level (admin or super-admin).
+        // Token is set as an HttpOnly cookie by `issueToken` and is NOT returned in the response body.
+        // This keeps the token inaccessible to JavaScript and is the recommended production pattern.
         const role = isSuper ? 'super-admin' : 'admin'
         issueToken(res, { sub: user.staff_id, role })
         return res.status(200).json({ message: `Authenticated (${role})`, user: { staff_id: user.staff_id, username: user.username, first_name: user.first_name, last_name: user.last_name} })

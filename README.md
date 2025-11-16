@@ -22,9 +22,11 @@ This README documents the backend API endpoints, middleware behavior, environmen
 
 ## Environment variables
 
-Create a `.env` in the backend root with at least:
+Create a `.env` in the backend root. Minimal recommended variables with example values:
 
 ```
+PORT=3001
+
 DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=CondoParkingDB
@@ -36,12 +38,50 @@ STAFF_DB_PASS=staff_pass
 TENANT_DB_USER=tenant_user
 TENANT_DB_PASS=tenant_pass
 
+# JWT / Cookie configuration
 JWT_SECRET=your_strong_jwt_secret
-JWT_EXPIRES_IN=1h
-JWT_COOKIE_NAME=token
+JWT_EXPIRES_IN=15m
+JWT_COOKIE_NAME=auth_token
+JWT_COOKIE_MAX_AGE_MS=900000
 
-PORT=3001
+# Cookie/CORS behavior (production)
+# FRONTEND_ORIGIN must match the actual frontend origin (protocol + host + port)
+FRONTEND_ORIGIN=https://app.yourdomain.com
+JWT_SAMESITE=none       # use 'none' for cross-site cookies
+COOKIE_SECURE=true      # must be true when JWT_SAMESITE=none (browsers require Secure)
+COOKIE_DOMAIN=.yourdomain.com  # optional: share cookie across subdomains
+
+# Optional development flag (do NOT enable in production)
+# JWT_SEND_IN_BODY=true
 ```
+
+Notes:
+- `JWT_SAMESITE=none` + `COOKIE_SECURE=true` required for cross-origin cookie flows (frontend and API on different origins).
+- If API is `https://testapi.notonoty.me` and frontend is `http://localhost:3000`, keep `FRONTEND_ORIGIN=http://localhost:3000`.
+- `COOKIE_DOMAIN` is optional. If omitted, the cookie is scoped to the API host (e.g. `testapi.notonoty.me`).
+
+## Production / Cross-origin setup (frontend on other host)
+
+If your frontend runs on another machine at `http://localhost:3000` and your backend is `https://testapi.notonoty.me`, then to allow the browser to receive and send the auth cookie you must:
+
+1. Serve the backend over HTTPS (your backend already uses `https://testapi.notonoty.me`).
+2. Configure env vars:
+  - `FRONTEND_ORIGIN=http://localhost:3000` (so the server responds with that exact origin in `Access-Control-Allow-Origin`).
+  - `JWT_SAMESITE=none`
+  - `COOKIE_SECURE=true`
+  - (optional) `COOKIE_DOMAIN=.notonoty.me` if you want the cookie available across subdomains.
+3. Ensure server sets CORS with `credentials: true` (the app already does this in `server.js`).
+4. On the frontend, include credentials on requests:
+  - `fetch(url, { credentials: 'include', ... })` or `axios(..., { withCredentials: true })`.
+
+Important browser behavior:
+- When `SameSite=None` and `Secure=true`, the cookie will be accepted by the browser and sent with cross-site requests to `https://testapi.notonoty.me` even if the page origin is `http://localhost:3000` — but only when the request is made to the cookie's domain (the API host).
+- The cookie is tied to the API domain. For typical setups you do NOT set cookies for `localhost` when the API is on a different domain.
+- If you need the cookie shared across subdomains (e.g., `app.notonoty.me` and `api.notonoty.me`), set `COOKIE_DOMAIN=.notonoty.me`.
+
+If you prefer not to deal with cross-site cookies, alternatives:
+- Host frontend under the same origin as API (e.g. `app.notonoty.me` and `api.notonoty.me` proxied so origin matches), or
+- Use access tokens sent in `Authorization: Bearer <token>` (requires storing tokens in memory or localStorage — less secure than HttpOnly cookies).
 
 ## API endpoints
 

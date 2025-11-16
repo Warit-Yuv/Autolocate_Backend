@@ -60,11 +60,16 @@ router.post('/auth', async (req, res) => {
         }
         // Successful authentication - issue JWT cookie and return user info
         console.log(`Tenant '${username}' authenticated successfully.`);
-        issueToken(res, { sub: user.tenant_id, role: 'tenant' })
-        return res.status(200).json({
+        // issueToken returns the signed token as a convenience
+        const token = issueToken(res, { sub: user.tenant_id, role: 'tenant' })
+        const sendTokenInBody = process.env.JWT_SEND_IN_BODY === 'true' || process.env.NODE_ENV !== 'production'
+        const responsePayload = {
             message: 'Authenticated',
             user: { tenant_id: user.tenant_id, username: user.username, first_name: user.first_name, last_name: user.last_name },
-        })
+        }
+        // For development/testing only (or when explicitly enabled), include token in response so frontend JS can use Authorization header
+        if (sendTokenInBody) responsePayload.token = token
+        return res.status(200).json(responsePayload)
     } catch (err) {
         console.error('Tenant auth error:', err)
         return res.status(500).json({ error: 'Server error' })

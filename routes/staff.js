@@ -21,7 +21,9 @@ router.post('/auth', async (req, res) => {
         const match = await bcrypt.compare(password, user.password_hash)
         if (!match) return res.status(401).json({ error: 'Invalid credentials' })
         console.log(`Login successful for username: ${username}`);
-        // Issue token with staff role
+        // Issue token with staff role. Note: token is set as an HttpOnly cookie by `issueToken`.
+        // We intentionally DO NOT return the token in the response body (production-safe).
+        // Frontend should rely on the HttpOnly cookie (use `credentials: 'include'`).
         issueToken(res, { sub: user.staff_id, role: 'staff' })
         return res.status(200).json({ message: 'Authenticated (staff)', user: { staff_id: user.staff_id, username: user.username, access_level: user.access_level , first_name: user.first_name, last_name: user.last_name ,position: user.position} })
     } catch (err) {

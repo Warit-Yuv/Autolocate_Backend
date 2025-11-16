@@ -10,8 +10,25 @@ dotenv.config()
 
 const app = express()
 const port = process.env.PORT || 3001
-// Allow frontend at localhost:3000 to send cookies (credentials)
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+// Allow frontend origins configured via env to send cookies (credentials)
+// Support a comma-separated list in FRONTEND_ORIGINS or a single FRONTEND_ORIGIN for convenience.
+const rawOrigins = process.env.FRONTEND_ORIGIN || 'http://localhost:3000'
+const FRONTEND_ORIGINS = rawOrigins.split(',').map(s => s.trim()).filter(Boolean)
+
+app.use(cors({
+  origin: (incomingOrigin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!incomingOrigin) return callback(null, true)
+    if (FRONTEND_ORIGINS.includes(incomingOrigin)) {
+      console.log(`CORS: allowing origin ${incomingOrigin}`)
+      return callback(null, true)
+    }
+    // Log rejected origins for debugging and return false (no ACAO header will be set)
+    console.warn(`CORS: rejecting origin ${incomingOrigin} — allowed list: ${FRONTEND_ORIGINS.join(',')}`)
+    return callback(null, false)
+  },
+  credentials: true,
+}))
 app.use(cookieParser())
 app.use(express.json());
 app.use('/api/tenant', tenantRouter)
