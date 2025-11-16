@@ -73,6 +73,7 @@ router.post('/auth', async (req, res) => {
 
 // Tenent retrieve parking slots
 router.post('/carlocation', jwtAuth, requireRole('tenant','staff','admin','super-admin'), async (req, res) => {
+    console.log('Received car location request with body:', req.body);
     const { username } = req.body || {}
     if (!username) {
         return res.status(400).json({ error: 'Missing username' })
