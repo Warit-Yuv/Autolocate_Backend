@@ -16,12 +16,17 @@ router.post('/auth', async (req, res) => {
         )
         if (!rows || rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' })
         const user = rows[0]
-        if (user.access_level !== 'admin') return res.status(403).json({ error: 'Not an admin' })
+        // Normalize access level from DB and decide role
+        const levelRaw = (user.access_level || '').toString().trim().toLowerCase()
+        const isSuper = levelRaw.includes('super')
+        const isAdmin = levelRaw.includes('admin') || isSuper
+        if (!isAdmin) return res.status(403).json({ error: 'Not an admin' })
         const match = await bcrypt.compare(password, user.password_hash)
         if (!match) return res.status(401).json({ error: 'Invalid credentials' })
-        // Issue token with admin role
-        issueToken(res, { sub: user.staff_id, role: 'admin' })
-        return res.status(200).json({ message: 'Authenticated (admin)', user: { staff_id: user.staff_id, username: user.username } })
+        // Issue token with role according to access_level (admin or super-admin)
+        const role = isSuper ? 'super-admin' : 'admin'
+        issueToken(res, { sub: user.staff_id, role })
+        return res.status(200).json({ message: `Authenticated (${role})`, user: { staff_id: user.staff_id, username: user.username, first_name: user.first_name, last_name: user.last_name} })
     } catch (err) {
         console.error('Admin auth error:', err)
         return res.status(500).json({ error: 'Server error' })
@@ -29,7 +34,8 @@ router.post('/auth', async (req, res) => {
 })
 
 // Admin-only: create tenant
-router.post('/tenants', jwtAuth, requireRole('admin'), async (req, res) => {
+// Both admin and super-admin can create tenants
+router.post('/tenants', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
     const { username, password, first_name = null, last_name = null, email = null } = req.body || {}
     if (!username || !password) return res.status(400).json({ error: 'Missing username or password' })
     try {
@@ -50,22 +56,57 @@ router.post('/tenants', jwtAuth, requireRole('admin'), async (req, res) => {
 })
 
 // Admin-only: create staff
-router.post('/staff', jwtAuth, requireRole('admin'), async (req, res) => {
-    const { username, password, first_name = null, last_name = null, position = null, access_level = 'staff', is_Active = true } = req.body || {}
+router.post('/staff', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
+    const { username, password, first_name = null, last_name = null, position = null, access_level = 'Staff', is_Active = true } = req.body || {}
     if (!username || !password) return res.status(400).json({ error: 'Missing username or password' })
     try {
+        // normalize requested access level
+        const requested = (access_level || 'staff').toString().trim().toLowerCase()
+        const wantsAdmin = requested.includes('admin') || requested === 'super-admin' || requested === 'super admin'
+        // If creating admin-level staff, require super-admin role
+        if (wantsAdmin && req.user?.role !== 'super-admin') {
+            return res.status(403).json({ error: 'Only super-admin can create admin users' })
+        }
         // check existing
         const [existing] = await adminPool.execute('SELECT staff_id FROM Staff WHERE username = ?', [username])
         if (existing && existing.length > 0) return res.status(409).json({ error: 'Username already taken' })
         const saltRounds = 10
         const hash = await bcrypt.hash(password, saltRounds)
+        // Normalize access_level stored in DB: capitalize properly
+        const storeAccess = wantsAdmin ? (requested.includes('super') ? 'Super-Admin' : 'Admin') : 'Staff'
         const [result] = await adminPool.execute(
             'INSERT INTO Staff (first_name, last_name, position, username, password_hash, access_level, is_Active) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [first_name, last_name, position, username, hash, access_level, is_Active]
+            [first_name, last_name, position, username, hash, storeAccess, is_Active]
         )
         return res.status(201).json({ message: 'Staff created', staff_id: result.insertId })
     } catch (err) {
         console.error('Admin create staff error:', err)
+        return res.status(500).json({ error: 'Server error' })
+    }
+})
+
+// Modify staff (e.g., change access_level). Admins can modify non-admin staff; only super-admin can promote to admin or change admin-level users.
+router.patch('/staff/:id', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
+    const staffId = req.params.id
+    const { access_level } = req.body || {}
+    if (!access_level) return res.status(400).json({ error: 'Missing access_level to set' })
+    try {
+        const [rows] = await adminPool.execute('SELECT staff_id, access_level FROM Staff WHERE staff_id = ?', [staffId])
+        if (!rows || rows.length === 0) return res.status(404).json({ error: 'Staff not found' })
+        const current = (rows[0].access_level || '').toString().toLowerCase()
+        const requested = (access_level || '').toString().toLowerCase()
+        const promotingToAdmin = requested.includes('admin')
+        const demotingAdmin = current.includes('admin') && !requested.includes('admin')
+        // If promoting to admin or modifying an admin, require super-admin
+        if (promotingToAdmin || current.includes('admin')) {
+            if (req.user?.role !== 'super-admin') return res.status(403).json({ error: 'Only super-admin can modify admin users' })
+        }
+        // Normalize stored access level
+        const storeAccess = requested.includes('super') ? 'Super-Admin' : (requested.includes('admin') ? 'Admin' : 'Staff')
+        await adminPool.execute('UPDATE Staff SET access_level = ? WHERE staff_id = ?', [storeAccess, staffId])
+        return res.status(200).json({ message: 'Staff access_level updated', staff_id: staffId, access_level: storeAccess })
+    } catch (err) {
+        console.error('Admin modify staff error:', err)
         return res.status(500).json({ error: 'Server error' })
     }
 })

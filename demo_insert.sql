@@ -10,7 +10,7 @@ START TRANSACTION;
 -- (IDs will be 1: John, 2: Jane)
 INSERT INTO Staff (first_name, last_name, position, username, password_hash, access_level, is_Active)
 VALUES 
-('John', 'Doe', 'Manager', 'johndoe', '$2b$10$IwyOuXM7po8BE9WFCtTgMuDtcL2yPDnOdf8VgTVYL.1STRYvHdtxG', 'Admin', TRUE), -- Password: admin123
+('John', 'Doe', 'Manager', 'johndoe', '$2b$10$yiwyVLzCBbgsBnQ2maJqyO7QbczS7JAcvILOpu3M5xa3uwdXORddm', 'Admin', TRUE), -- Password: admin123
 ('Jane', 'Smith', 'Security', 'janesmith', '$2b$10$8jHpr4mv4XPcTG10NByKwuc73JPPiHALDI7OXvZmlTvedP87oJND6', 'Staff', TRUE); -- Password: staff123
 
 -- 2. Parking_Slot (No dependencies)

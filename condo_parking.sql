@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS Staff (
     position VARCHAR(50),
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    access_level ENUM('Admin', 'Staff') NOT NULL,
+    access_level ENUM('Super-Admin', 'Admin', 'Staff') NOT NULL,
     is_Active BOOLEAN DEFAULT TRUE,
     CONSTRAINT PK_Staff PRIMARY KEY (staff_id)
 );
