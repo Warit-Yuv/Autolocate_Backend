@@ -72,4 +72,64 @@ router.post('/parking_log_search', jwtAuth, requireRole('staff','admin','super-a
             }
 });
 
+router.post('/dashboard', jwtAuth, requireRole('staff','admin','super-admin'), async (req, res) => {
+    try {
+                const [rows] = await staffPool.execute('SELECT rt.tag_status,count(rt.RFID_TID) FROM RFID_Tag rt where rt.tag_type="Guest" Group by tag_status ');
+                res.status(200).json({ dashboard: rows });
+        } catch (err) {
+                console.error('Error fetching tenants:', err);
+                res.status(500).json({ error: 'Error fetching parking log' });
+        }
+});
+
+router.post('/guest_management',jwtAuth,requireRole('staff', 'admin', 'super-admin'),async (req, res) => {
+      const {license_number,brand,model,color,firstname,lastname,gender,note,room_id,guest_RFID_TID,visit_EPC,staff_id} = req.body || {};
+
+      if (!license_number || !brand || !model || !color || !firstname || !lastname || !gender) {
+        return res.status(400).json({ error: 'Please fill all required information' });
+      }
+  
+      try {
+        const [carCheck] = await staffPool.execute(
+          'SELECT license_number FROM car WHERE license_number = ?',
+          [license_number]
+        );
+
+        if (carCheck.length === 0) {
+          await staffPool.execute(
+            `INSERT INTO car (license_number, brand, model, color)
+             VALUES (?, ?, ?, ?)`,
+            [license_number, brand, model, color]
+          );
+          console.log(`Car inserted: ${license_number}`);
+        } else {
+          console.log(`Car already exists: ${license_number}`);
+        }
+  
+        const [guestInsert] = await staffPool.execute(
+          `INSERT INTO guest_visit 
+            (guest_first_name, guest_last_name, guest_gender, check_in_time, 
+             note, room_id, license_number, guest_RFID_TID, visit_EPC, staff_id)
+           VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?)
+          `,
+          [firstname, lastname,gender,note ||'',room_id ,license_number,guest_RFID_TID ,visit_EPC,staff_id]
+        );
+  
+        console.log(`Guest visit inserted: id = ${guestInsert.insertId}`);
+  
+        return res.status(200).json({
+          message: 'Guest visit saved successfully',
+          car_exists: carCheck.length > 0 ? true : false,
+          guest_visit_id: guestInsert.insertId
+        });
+      } catch (err) {
+        console.error('Guest Management Insert Error:', err);
+        return res
+          .status(500)
+          .json({ error: 'Server error while saving guest visit' });
+      }
+    }
+  );
+  
+
 export default router
