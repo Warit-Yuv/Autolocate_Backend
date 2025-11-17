@@ -90,7 +90,6 @@ router.get('/parking_log', async (req, res) => {
         return res.status(500).json({ error: 'Error fetching parking log' })
     }
 })
-export default router
 
 // POST /api/admin/parking_log - accept JSON body { date, license_number }
 router.post('/parking_log', async (req, res) => {
@@ -153,3 +152,6 @@ router.post('/parking_log', async (req, res) => {
         return res.status(500).json({ error: 'Error fetching parking log' })
     }
 })
+
+export default router
+

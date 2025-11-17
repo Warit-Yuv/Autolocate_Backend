@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS Gate_Arrival_Departure (
 
 -- Table: Condo_Room
 CREATE TABLE IF NOT EXISTS Condo_Room (
-    room_id INT AUTO_INCREMENT,
+    room_id INT ,
     building VARCHAR(50),
     floor INT,
     room_type VARCHAR(50),

@@ -11,15 +11,89 @@ START TRANSACTION;
 INSERT INTO Staff (first_name, last_name, position, username, password_hash, access_level, is_Active)
 VALUES 
 ('John', 'Doe', 'Manager', 'johndoe', '$2b$10$yiwyVLzCBbgsBnQ2maJqyO7QbczS7JAcvILOpu3M5xa3uwdXORddm', 'Admin', TRUE), -- Password: admin123
-('Jane', 'Smith', 'Security', 'janesmith', '$2b$10$8jHpr4mv4XPcTG10NByKwuc73JPPiHALDI7OXvZmlTvedP87oJND6', 'Staff', TRUE); -- Password: staff123
+('Jane', 'Smith', 'Security', 'janesmith', '$2b$10$8jHpr4mv4XPcTG10NByKwuc73JPPiHALDI7OXvZmlTvedP87oJND6', 'Staff', TRUE), -- Password: staff123
+('Mike', 'Brown', 'Security', 'mikebrown', '$2b$10$wCaDFr1nM9vd9jHqWBVBxeHKQULpmnyKUp.F7.s0pYJzB0f41si7m', 'Staff', FALSE), -- Password: staff123 (Inactive)
+('Emily', 'Davis', 'Security', 'emilydavis', '$2b$10$mSpWNn1CuOOVkkHkm9YEYu0piyBkk/seTivO9TibEgiR1nSgDQLwq', 'Staff', TRUE), -- Password: staff123
+('Noto', 'Noty', 'IT Head', 'notonoty', '$2b$10$RBw5ppTAHHIQRcrTtPB8oO9QxySWP4cFe1GcZqF7YfkbdvIpo0NPq', 'Super-Admin', TRUE); -- Password: Superadmin123
 
 -- 2. Parking_Slot (No dependencies)
-INSERT INTO Parking_Slot (parking_slot_ID, floor, slot_type)
-VALUES
-('A-101', 1, 'Fixed_slot'),
-('A-102', 1, 'Fixed_slot'),
-('G-01', 1, 'Guest'),
-('B-01', 2, 'Standard');
+-- INSERT INTO Parking_Slot (parking_slot_ID, floor, slot_type)
+-- VALUES
+-- ('A-101', 1, 'Fixed_slot'),
+-- ('A-102', 1, 'Fixed_slot'),
+-- ('G-01', 1, 'Guest'),
+-- ('B-01', 2, 'Standard');
+
+-- 1. Remove any existing Building A slots to prevent conflicts
+DELETE FROM parking_slot WHERE parking_slot_id LIKE 'A-%';
+
+-- 2. Insert all 60 fixed slots for Building A (Floors 1-3)
+INSERT INTO parking_slot (parking_slot_id, floor, slot_type) VALUES
+-- Floor 1 (20 Slots)
+('A-101', '1', 'Fixed_slot'),
+('A-102', '1', 'Fixed_slot'),
+('A-103', '1', 'Fixed_slot'),
+('A-104', '1', 'Fixed_slot'),
+('A-105', '1', 'Fixed_slot'),
+('A-106', '1', 'Fixed_slot'),
+('A-107', '1', 'Fixed_slot'),
+('A-108', '1', 'Fixed_slot'),
+('A-109', '1', 'Fixed_slot'),
+('A-110', '1', 'Fixed_slot'),
+('A-111', '1', 'Fixed_slot'),
+('A-112', '1', 'Fixed_slot'),
+('A-113', '1', 'Fixed_slot'),
+('A-114', '1', 'Fixed_slot'),
+('A-115', '1', 'Fixed_slot'),
+('A-116', '1', 'Fixed_slot'),
+('A-117', '1', 'Fixed_slot'),
+('A-118', '1', 'Fixed_slot'),
+('A-119', '1', 'Fixed_slot'),
+('A-120', '1', 'Fixed_slot'),
+
+-- Floor 2 (20 Slots)
+('A-201', '2', 'Fixed_slot'),
+('A-202', '2', 'Fixed_slot'),
+('A-203', '2', 'Fixed_slot'),
+('A-204', '2', 'Fixed_slot'),
+('A-205', '2', 'Fixed_slot'),
+('A-206', '2', 'Fixed_slot'),
+('A-207', '2', 'Fixed_slot'),
+('A-208', '2', 'Fixed_slot'),
+('A-209', '2', 'Fixed_slot'),
+('A-210', '2', 'Fixed_slot'),
+('A-211', '2', 'Fixed_slot'),
+('A-212', '2', 'Fixed_slot'),
+('A-213', '2', 'Fixed_slot'),
+('A-214', '2', 'Fixed_slot'),
+('A-215', '2', 'Fixed_slot'),
+('A-216', '2', 'Fixed_slot'),
+('A-217', '2', 'Fixed_slot'),
+('A-218', '2', 'Fixed_slot'),
+('A-219', '2', 'Fixed_slot'),
+('A-220', '2', 'Fixed_slot'),
+
+-- Floor 3 (20 Slots)
+('A-301', '3', 'Fixed_slot'),
+('A-302', '3', 'Fixed_slot'),
+('A-303', '3', 'Fixed_slot'),
+('A-304', '3', 'Fixed_slot'),
+('A-305', '3', 'Fixed_slot'),
+('A-306', '3', 'Fixed_slot'),
+('A-307', '3', 'Fixed_slot'),
+('A-308', '3', 'Fixed_slot'),
+('A-309', '3', 'Fixed_slot'),
+('A-310', '3', 'Fixed_slot'),
+('A-311', '3', 'Fixed_slot'),
+('A-312', '3', 'Fixed_slot'),
+('A-313', '3', 'Fixed_slot'),
+('A-314', '3', 'Fixed_slot'),
+('A-315', '3', 'Fixed_slot'),
+('A-316', '3', 'Fixed_slot'),
+('A-317', '3', 'Fixed_slot'),
+('A-318', '3', 'Fixed_slot'),
+('A-319', '3', 'Fixed_slot'),
+('A-320', '3', 'Fixed_slot');
 
 -- 3. Car (Depends on Staff)
 INSERT INTO Car (license_number, brand, model, color, staff_id)
@@ -32,10 +106,45 @@ VALUES
 
 -- 4. Condo_Room (Depends on Car)
 -- (IDs will be 1: A-101, 2: A-102)
-INSERT INTO Condo_Room (building, floor, room_type, license_number)
-VALUES
-('A', 10, '1-Bedroom', 'BK-1111'), -- Room 1, assigned 'BK-1111'
-('A', 10, '2-Bedroom', 'BK-2222'); -- Room 2, assigned 'BK-2222'
+INSERT INTO condo_room (room_id, building, floor, room_type, license_number) VALUES
+-- ('A', 10, '1-Bedroom', 'BK-1111'), -- Room 1, assigned 'BK-1111'
+-- ('A', 10, '2-Bedroom', 'BK-2222'); -- Room 2, assigned 'BK-2222'
+('501', 'A', '5', 'Studio', 'AB-1234'),
+('502', 'A', '5', '1-Bedroom', NULL),
+('503', 'A', '5', 'Studio', NULL),
+('601', 'A', '6', '1-Bedroom', 'CD-5678'),
+('602', 'A', '6', '2-Bedroom', 'EF-9012'),
+('603', 'A', '6', '1-Bedroom', NULL),
+('604', 'A', '6', '1-Bedroom', 'XY-5555'),
+('801', 'A', '8', 'Studio', NULL),
+('802', 'A', '8', 'Studio', NULL),
+('803', 'A', '8', '2-Bedroom', 'GT-3000'),
+('1001', 'A', '10', '1-Bedroom', 'BK-1111'),
+('1002', 'A', '10', '2-Bedroom', 'BK-2222'),
+('1003', 'A', '10', '1-Bedroom', NULL),
+('1101', 'A', '11', '2-Bedroom', 'GH-3456'),
+('1102', 'A', '11', '2-Bedroom', 'IJ-7890'),
+('1103', 'A', '11', 'Studio', NULL),
+('1104', 'A', '11', '1-Bedroom', 'AZ-1212'),
+('1201', 'A', '12', '1-Bedroom', NULL),
+('1202', 'A', '12', '2-Bedroom', 'KL-1122'),
+('1401', 'A', '14', 'Studio', NULL),
+('1402', 'A', '14', 'Studio', 'RE-4567'),
+('1501', 'A', '15', '2-Bedroom', 'MN-3344'),
+('1502', 'A', '15', '1-Bedroom', NULL),
+('1503', 'A', '15', '2-Bedroom', NULL),
+('1601', 'A', '16', '1-Bedroom', 'PP-9876'),
+('1602', 'A', '16', 'Studio', NULL),
+('1701', 'A', '17', '2-Bedroom', 'QW-1110'),
+('1801', 'A', '18', 'Studio', 'ER-2233'),
+('1802', 'A', '18', '1-Bedroom', NULL),
+('1803', 'A', '18', '1-Bedroom', NULL),
+('2001', 'A', '20', '2-Bedroom', 'TY-4455'),
+('2002', 'A', '20', 'Studio', NULL),
+('2101', 'A', '21', '1-Bedroom', 'UI-6677'),
+('2201', 'A', '22', '2-Bedroom', NULL),
+('2202', 'A', '22', '2-Bedroom', 'OP-8899'),
+('2501', 'A', '25', 'Penthouse', 'VV-1000');
 
 -- 5. Tenant (Depends on Condo_Room)
 INSERT INTO Tenant (username, password_hash, first_name, last_name, gender, tel_no, email, is_primary_contact, tenant_status, room_id)
