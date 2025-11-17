@@ -20,7 +20,7 @@ app.use(cors({
     // Allow requests with no origin (curl, Postman, server-to-server)
     if (!incomingOrigin) return callback(null, true)
     if (FRONTEND_ORIGINS.includes(incomingOrigin)) {
-      console.log(`CORS: allowing origin ${incomingOrigin}`)
+      // console.log(`CORS: allowing origin ${incomingOrigin}`)
       return callback(null, true)
     }
     // Log rejected origins for debugging and return false (no ACAO header will be set)

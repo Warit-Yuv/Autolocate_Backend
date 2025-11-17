@@ -91,36 +91,106 @@ router.post('/staff', jwtAuth, requireRole('admin','super-admin'), async (req, r
     }
 })
 
-// Modify staff (e.g., change access_level). Admins can modify non-admin staff; only super-admin can promote to admin or change admin-level users.
+// PATCH /staff/:id - update staff fields (first_name, last_name, position, username, password, access_level, is_Active)
+// e.g. to change name of user id 7 to 'hiho' : https://testapi.notonoty.me/api/admin/staff/7  with body { "first_name": "hi", "last_name": "ho" }
 router.patch('/staff/:id', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
     const staffId = req.params.id
-    const { access_level } = req.body || {}
-    if (!access_level) return res.status(400).json({ error: 'Missing access_level to set' })
+    const { first_name, last_name, position, username, password, access_level, is_Active } = req.body || {}
+
+    if (
+        first_name === undefined && last_name === undefined && position === undefined && username === undefined &&
+        password === undefined && access_level === undefined && is_Active === undefined
+    ) {
+        return res.status(400).json({ error: 'Nothing to update' })
+    }
+
     try {
-        const [rows] = await adminPool.execute('SELECT staff_id, access_level FROM Staff WHERE staff_id = ?', [staffId])
-        if (!rows || rows.length === 0) return res.status(404).json({ error: 'Staff not found' })
-        const current = (rows[0].access_level || '').toString().toLowerCase()
-        const requested = (access_level || '').toString().toLowerCase()
-        const promotingToAdmin = requested.includes('admin')
-        const demotingAdmin = current.includes('admin') && !requested.includes('admin')
-        // If promoting to admin or modifying an admin, require super-admin
-        if (promotingToAdmin || current.includes('admin')) {
-            if (req.user?.role !== 'super-admin') return res.status(403).json({ error: 'Only super-admin can modify admin users' })
+        console.log(`PATCH /api/admin/staff/${staffId} called by user:`, req.user)
+        console.log('Request body:', req.body)
+        const [rows] = await adminPool.execute('SELECT staff_id, access_level, username FROM Staff WHERE staff_id = ?', [staffId])
+        if (!rows || rows.length === 0) {
+            console.warn(`Staff id ${staffId} not found`)
+            return res.status(404).json({ error: 'Staff not found' })
         }
-        // Normalize stored access level
-        const storeAccess = requested.includes('super') ? 'Super-Admin' : (requested.includes('admin') ? 'Admin' : 'Staff')
-        await adminPool.execute('UPDATE Staff SET access_level = ? WHERE staff_id = ?', [storeAccess, staffId])
-        return res.status(200).json({ message: 'Staff access_level updated', staff_id: staffId, access_level: storeAccess })
+
+        const current = (rows[0].access_level || '').toString().toLowerCase()
+        const currentUsername = rows[0].username
+        console.log('Current staff record:', { staff_id: rows[0].staff_id, username: currentUsername, access_level: rows[0].access_level })
+
+        // If access_level change requested, apply super-admin guard
+        if (access_level !== undefined) {
+            console.log(`Attempting to change access_level for staff_id ${staffId} -> ${access_level}`)
+            const requested = (access_level || '').toString().toLowerCase()
+            const promotingToAdmin = requested.includes('admin')
+            // If promoting to admin or modifying an admin, require super-admin
+            if (promotingToAdmin || current.includes('admin')) {
+                if (req.user?.role !== 'super-admin') return res.status(403).json({ error: 'Only super-admin can modify admin users' })
+            }
+            const storeAccess = requested.includes('super') ? 'Super-Admin' : (requested.includes('admin') ? 'Admin' : 'Staff')
+            console.log(`Updating access_level for staff_id ${staffId} -> ${storeAccess}`)
+            await adminPool.execute('UPDATE Staff SET access_level = ? WHERE staff_id = ?', [storeAccess, staffId])
+        }
+
+        // Update username if requested (ensure uniqueness)
+        if (username !== undefined && username !== currentUsername) {
+            console.log(`Attempting to change username for staff_id ${staffId} -> ${username}`)
+            const [existing] = await adminPool.execute('SELECT staff_id FROM Staff WHERE username = ? AND staff_id != ?', [username, staffId])
+            if (existing && existing.length > 0) {
+                console.warn(`Username ${username} already taken`)
+                return res.status(409).json({ error: 'Username already taken' })
+            }
+            await adminPool.execute('UPDATE Staff SET username = ? WHERE staff_id = ?', [username, staffId])
+            console.log(`Username updated for staff_id ${staffId}`)
+        }
+
+        // Update password if provided (hash it)
+        if (password !== undefined) {
+            console.log(`Updating password for staff_id ${staffId}`)
+            if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' })
+            const saltRounds = 10
+            const hash = await bcrypt.hash(password, saltRounds)
+            await adminPool.execute('UPDATE Staff SET password_hash = ? WHERE staff_id = ?', [hash, staffId])
+            console.log(`Password updated for staff_id ${staffId}`)
+        }
+
+        // Update other profile fields
+        if (first_name !== undefined) {
+            await adminPool.execute('UPDATE Staff SET first_name = ? WHERE staff_id = ?', [first_name, staffId])
+            console.log(`first_name updated for staff_id ${staffId}`)
+        }
+        if (last_name !== undefined) {
+            await adminPool.execute('UPDATE Staff SET last_name = ? WHERE staff_id = ?', [last_name, staffId])
+            console.log(`last_name updated for staff_id ${staffId}`)
+        }
+        if (position !== undefined) {
+            await adminPool.execute('UPDATE Staff SET position = ? WHERE staff_id = ?', [position, staffId])
+            console.log(`position updated for staff_id ${staffId}`)
+        }
+
+        // Update is_Active if provided
+        if (is_Active !== undefined) {
+            const value = (is_Active === true || is_Active === 1) ? 1 : 0
+            await adminPool.execute('UPDATE Staff SET is_Active = ? WHERE staff_id = ?', [value, staffId])
+            console.log(`is_Active set to ${value} for staff_id ${staffId}`)
+        }
+
+        // Return updated row
+        const [updatedRows] = await adminPool.execute('SELECT staff_id, first_name, last_name, position, username, access_level, is_Active FROM Staff WHERE staff_id = ?', [staffId])
+        console.log('Updated staff record:', updatedRows[0])
+        return res.status(200).json({ message: 'Staff updated', staff: updatedRows[0] })
     } catch (err) {
         console.error('Admin modify staff error:', err)
         return res.status(500).json({ error: 'Server error' })
     }
 })
 
+
+
 // Select all staff (admin and super-admin only)
 // GET https://testapi.notonoty.me/api/admin/staff-info
 router.get('/staff-info', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
     try {
+        console.log('Admin fetching all staff info')
         const [rows] = await adminPool.execute(`
             SELECT staff_id,
             first_name, last_name,
@@ -135,6 +205,25 @@ router.get('/staff-info', jwtAuth, requireRole('admin','super-admin'), async (re
     } catch (err) {
         console.error('Admin get staff error:', err)
         res.status(500).json({ error: 'Server error' })
+    }
+})
+
+// Get single staff by id (admin and super-admin only)
+// GET /api/admin/get/staff/:id
+router.get('/get/staff/:id', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
+    const staffId = req.params.id
+    try {
+        console.log(`Admin fetching staff info for staff_id ${staffId}`)
+        const [rows] = await adminPool.execute(
+            `SELECT staff_id, first_name, last_name, position, username, access_level, is_Active
+             FROM Staff WHERE staff_id = ?`,
+            [staffId]
+        )
+        if (!rows || rows.length === 0) return res.status(404).json({ error: 'Staff not found' })
+        return res.status(200).json({ staff: rows[0] })
+    } catch (err) {
+        console.error('Admin get single staff error:', err)
+        return res.status(500).json({ error: 'Server error' })
     }
 })
 

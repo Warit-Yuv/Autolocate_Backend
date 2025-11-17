@@ -11,7 +11,10 @@ START TRANSACTION;
 INSERT INTO Staff (first_name, last_name, position, username, password_hash, access_level, is_Active)
 VALUES 
 ('John', 'Doe', 'Manager', 'johndoe', '$2b$10$yiwyVLzCBbgsBnQ2maJqyO7QbczS7JAcvILOpu3M5xa3uwdXORddm', 'Admin', TRUE), -- Password: admin123
-('Jane', 'Smith', 'Security', 'janesmith', '$2b$10$8jHpr4mv4XPcTG10NByKwuc73JPPiHALDI7OXvZmlTvedP87oJND6', 'Staff', TRUE); -- Password: staff123
+('Jane', 'Smith', 'Security', 'janesmith', '$2b$10$8jHpr4mv4XPcTG10NByKwuc73JPPiHALDI7OXvZmlTvedP87oJND6', 'Staff', TRUE), -- Password: staff123
+('Mike', 'Brown', 'Security', 'mikebrown', '$2b$10$wCaDFr1nM9vd9jHqWBVBxeHKQULpmnyKUp.F7.s0pYJzB0f41si7m', 'Staff', FALSE), -- Password: staff123 (Inactive)
+('Emily', 'Davis', 'Security', 'emilydavis', '$2b$10$mSpWNn1CuOOVkkHkm9YEYu0piyBkk/seTivO9TibEgiR1nSgDQLwq', 'Staff', TRUE), -- Password: staff123
+('Noto', 'Noty', 'IT Head', 'notonoty', '$2b$10$RBw5ppTAHHIQRcrTtPB8oO9QxySWP4cFe1GcZqF7YfkbdvIpo0NPq', 'Super-Admin', TRUE); -- Password: Superadmin123
 
 -- 2. Parking_Slot (No dependencies)
 INSERT INTO Parking_Slot (parking_slot_ID, floor, slot_type)
