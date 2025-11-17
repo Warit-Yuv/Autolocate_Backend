@@ -39,6 +39,17 @@ router.post('/auth', async (req, res) => {
     }
 })
 
+//try select * from Tenant table - typing /api/tenant/tenants should return all tenants
+router.get('/tenants', jwtAuth, requireRole('staff','admin','super-admin'), async (req, res) => {
+    try {
+        const [rows] = await tenantPool.execute('SELECT * FROM Tenant');
+        res.status(200).json({ tenants: rows });
+    } catch (err) {
+        console.error('Error fetching tenants:', err);
+        res.status(500).json({ error: 'Error fetching tenants' });
+    }
+});
+
 // Retrieve parking log (staff only)
 // https://testapi.notonoty.me/api/staff/parking_log_search
 router.post('/parking_log_search', jwtAuth, requireRole('staff','admin','super-admin'), async (req, res) => {

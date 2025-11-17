@@ -255,6 +255,63 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Staff - parking log search",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "https://testapi.notonoty.me/api/staff/parking_log_search",
+					"protocol": "https",
+					"host": [
+						"testapi",
+						"notonoty",
+						"me"
+					],
+					"path": [
+						"api",
+						"staff",
+						"parking_log_search"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - get staff info",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{NotoUrl}}/api/admin/staff-info",
+					"host": [
+						"{{NotoUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"staff-info"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - get gest visit",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - get tenant list",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
 		}
 	],
 	"variable": [

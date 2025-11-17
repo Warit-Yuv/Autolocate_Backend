@@ -24,17 +24,6 @@ router.get('/test-db-connection', async (req, res) => {
     }
 });
 
-//try select * from Tenant table - typing /api/tenant/tenants should return all tenants
-router.get('/tenants', async (req, res) => {
-    try {
-        const [rows] = await tenantPool.execute('SELECT * FROM Tenant');
-        res.status(200).json({ tenants: rows });
-    } catch (err) {
-        console.error('Error fetching tenants:', err);
-        res.status(500).json({ error: 'Error fetching tenants' });
-    }
-});
-
 // Tenant login (uses tenant DB user)
 router.post('/auth', async (req, res) => {
     const { username, password } = req.body || {}
@@ -49,7 +38,7 @@ router.post('/auth', async (req, res) => {
             [username]
         )
         if (!rows || rows.length === 0) {
-            console.log(`No user found with username: ${username}`);
+            console.log(`No tenant found with username: ${username}`);
             return res.status(401).json({ error: 'Invalid credentials' })
         }
         const user = rows[0]
@@ -58,7 +47,7 @@ router.post('/auth', async (req, res) => {
             console.log(`Password mismatch for username: ${username}`);
             return res.status(401).json({ error: 'Invalid credentials' })
         }
-        // Successful authentication - issue JWT cookie and return user info
+        // Successful authentication - issue JWT cookie and return tenant info
         console.log(`Tenant '${username}' authenticated successfully.`);
         // issueToken returns the signed token as a convenience
         const token = issueToken(res, { sub: user.tenant_id, role: 'tenant' })
@@ -77,7 +66,8 @@ router.post('/auth', async (req, res) => {
 });
 
 // Tenent retrieve parking slots
-router.post('/carlocation', jwtAuth, requireRole('tenant','staff','admin','super-admin'), async (req, res) => {
+// https://testapi.notonoty.me/api/tenant/carlocation with body { "username": "tenant_username" }
+router.post('/carlocation', jwtAuth, requireRole('tenant', 'staff', 'admin', 'super-admin'), async (req, res) => {
     console.log('Received car location request with body:', req.body);
     const { username } = req.body || {}
     if (!username) {
@@ -100,6 +90,30 @@ router.post('/carlocation', jwtAuth, requireRole('tenant','staff','admin','super
         res.status(500).json({ error: 'Error fetching car locations' });
     }
 });
+
+// post to retrieve recent vehicale direction status
+router.post('/vehicleDirection', jwtAuth, requireRole('tenant', 'staff', 'admin', 'super-admin'), async (req, res) => {
+    console.log('Received vehicle direction request with body:', req.body);
+    const { license_number } = req.body || {}
+    if (!license_number) {
+        return res.status(400).json({ error: 'Missing license_number' })
+    }
+    try {
+        const [rows] = await tenantPool.execute(
+            `SELECT gad.direction AS vehicleDirection, gad.time_stamp, gad.gate_name,
+            gad.scanned_RFID_TID, gad.scanned_EPC, rt.license_number
+            FROM gate_arrival_departure gad
+            JOIN rfid_tag rt ON gad.scanned_RFID_TID = rt.RFID_TID
+            WHERE rt.license_number = ?
+            ORDER BY gad.time_stamp DESC LIMIT 1;`, [license_number]
+        );
+        res.status(200).json({ vehicleDirectionStatus: rows });
+    } catch (err) {
+        console.error('Error fetching vehicle direction status:', err);
+        res.status(500).json({ error: 'Error fetching vehicle direction status' });
+    }
+});
+
 
 
 export default router
