@@ -553,15 +553,15 @@ router.post('/parking_log', async (req, res) => {
             ps.parking_slot_ID AS parking_slot_id,
             ps.note AS note,
             rt.tag_status AS status
-        FROM Parking_Log ps
-        LEFT JOIN RFID_Tag rt ON rt.RFID_TID = ps.scanned_RFID_TID
-        LEFT JOIN Car c ON c.license_number = rt.license_number
-        LEFT JOIN Condo_Room cr ON cr.license_number = c.license_number
-        LEFT JOIN Tenant t ON t.room_id = cr.room_id
-        LEFT JOIN Guest_Visit gv ON gv.guest_RFID_TID = ps.scanned_RFID_TID
-        ${whereSql}
-        ORDER BY ps.recorded_time DESC
-        LIMIT 1000`
+            FROM Parking_Log ps
+            LEFT JOIN RFID_Tag rt ON rt.RFID_TID = ps.scanned_RFID_TID
+            LEFT JOIN Car c ON c.license_number = rt.license_number
+            LEFT JOIN Condo_Room cr ON cr.license_number = c.license_number
+            LEFT JOIN Tenant t ON t.room_id = cr.room_id
+            LEFT JOIN Guest_Visit gv ON gv.guest_RFID_TID = ps.scanned_RFID_TID
+            ${whereSql}
+            ORDER BY ps.recorded_time DESC
+            LIMIT 1000`
 
         const [rows] = await adminPool.execute(sql, params)
         console.log('POST /api/admin/parking_log - Sample row date:', rows[0]?.date, 'type:', typeof rows[0]?.date)
