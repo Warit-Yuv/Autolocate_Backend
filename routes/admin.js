@@ -1,7 +1,7 @@
 import express from 'express'
 import bcrypt from 'bcrypt'
 import { adminPool } from '../db.js'
-import { issueToken, jwtAuth, requireRole } from '../middleware/auth.js'
+import { jwtAuth } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -16,105 +16,140 @@ router.post('/auth', async (req, res) => {
         )
         if (!rows || rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' })
         const user = rows[0]
-        // Normalize access level from DB and decide role
-        const levelRaw = (user.access_level || '').toString().trim().toLowerCase()
-        const isSuper = levelRaw.includes('super')
-        const isAdmin = levelRaw.includes('admin') || isSuper
-        if (!isAdmin) return res.status(403).json({ error: 'Not an admin' })
+        if (user.access_level !== 'admin') return res.status(403).json({ error: 'Not an admin' })
         const match = await bcrypt.compare(password, user.password_hash)
         if (!match) return res.status(401).json({ error: 'Invalid credentials' })
-        // Issue token with role according to access_level (admin or super-admin).
-        // Token is set as an HttpOnly cookie by `issueToken`.
-        // For testing convenience we may also include the token in the response body when
-        // NODE_ENV !== 'production' or JWT_SEND_IN_BODY=true. In production we still only use the cookie.
-        const role = isSuper ? 'super-admin' : 'admin'
-        const token = issueToken(res, { sub: user.staff_id, role })
-        const sendTokenInBody = process.env.JWT_SEND_IN_BODY === 'true' || process.env.NODE_ENV !== 'production'
-        const responsePayload = { message: `Authenticated (${role})`, user: { staff_id: user.staff_id, username: user.username, first_name: user.first_name, last_name: user.last_name } }
-        if (sendTokenInBody) responsePayload.token = token
-        return res.status(200).json(responsePayload)
+        return res.status(200).json({ message: 'Authenticated (admin)', user: { staff_id: user.staff_id, username: user.username } })
     } catch (err) {
         console.error('Admin auth error:', err)
         return res.status(500).json({ error: 'Server error' })
     }
 })
 
-// Admin-only: create tenant
-// Both admin and super-admin can create tenants
-router.post('/tenants', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
-    const { username, password, first_name = null, last_name = null, email = null } = req.body || {}
-    if (!username || !password) return res.status(400).json({ error: 'Missing username or password' })
+router.get('/parking_log', async (req, res) => {
+    // Optional query params: ?date=YYYY-MM-DD&license_number=...
+    const { date, license_number } = req.query || {}
+    let params = []
+    let sql = ''
     try {
-        // check existing
-        const [existing] = await adminPool.execute('SELECT tenant_id FROM Tenant WHERE username = ?', [username])
-        if (existing && existing.length > 0) return res.status(409).json({ error: 'Username already taken' })
-        const saltRounds = 10
-        const hash = await bcrypt.hash(password, saltRounds)
-        const [result] = await adminPool.execute(
-            'INSERT INTO Tenant (username, password_hash, first_name, last_name, email) VALUES (?, ?, ?, ?, ?)',
-            [username, hash, first_name, last_name, email]
-        )
-        return res.status(201).json({ message: 'Tenant created', tenant_id: result.insertId })
-    } catch (err) {
-        console.error('Admin create tenant error:', err)
-        return res.status(500).json({ error: 'Server error' })
-    }
-})
-
-// Admin-only: create staff
-router.post('/staff', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
-    const { username, password, first_name = null, last_name = null, position = null, access_level = 'Staff', is_Active = true } = req.body || {}
-    if (!username || !password) return res.status(400).json({ error: 'Missing username or password' })
-    try {
-        // normalize requested access level
-        const requested = (access_level || 'staff').toString().trim().toLowerCase()
-        const wantsAdmin = requested.includes('admin') || requested === 'super-admin' || requested === 'super admin'
-        // If creating admin-level staff, require super-admin role
-        if (wantsAdmin && req.user?.role !== 'super-admin') {
-            return res.status(403).json({ error: 'Only super-admin can create admin users' })
+        const where = []
+        params = []
+        if (date) {
+            where.push('DATE(ps.recorded_time) = ?')
+            params.push(date)
         }
-        // check existing
-        const [existing] = await adminPool.execute('SELECT staff_id FROM Staff WHERE username = ?', [username])
-        if (existing && existing.length > 0) return res.status(409).json({ error: 'Username already taken' })
-        const saltRounds = 10
-        const hash = await bcrypt.hash(password, saltRounds)
-        // Normalize access_level stored in DB: capitalize properly
-        const storeAccess = wantsAdmin ? (requested.includes('super') ? 'Super-Admin' : 'Admin') : 'Staff'
-        const [result] = await adminPool.execute(
-            'INSERT INTO Staff (first_name, last_name, position, username, password_hash, access_level, is_Active) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [first_name, last_name, position, username, hash, storeAccess, is_Active]
-        )
-        return res.status(201).json({ message: 'Staff created', staff_id: result.insertId })
-    } catch (err) {
-        console.error('Admin create staff error:', err)
-        return res.status(500).json({ error: 'Server error' })
-    }
-})
-
-// Modify staff (e.g., change access_level). Admins can modify non-admin staff; only super-admin can promote to admin or change admin-level users.
-router.patch('/staff/:id', jwtAuth, requireRole('admin','super-admin'), async (req, res) => {
-    const staffId = req.params.id
-    const { access_level } = req.body || {}
-    if (!access_level) return res.status(400).json({ error: 'Missing access_level to set' })
-    try {
-        const [rows] = await adminPool.execute('SELECT staff_id, access_level FROM Staff WHERE staff_id = ?', [staffId])
-        if (!rows || rows.length === 0) return res.status(404).json({ error: 'Staff not found' })
-        const current = (rows[0].access_level || '').toString().toLowerCase()
-        const requested = (access_level || '').toString().toLowerCase()
-        const promotingToAdmin = requested.includes('admin')
-        const demotingAdmin = current.includes('admin') && !requested.includes('admin')
-        // If promoting to admin or modifying an admin, require super-admin
-        if (promotingToAdmin || current.includes('admin')) {
-            if (req.user?.role !== 'super-admin') return res.status(403).json({ error: 'Only super-admin can modify admin users' })
+        if (license_number) {
+            where.push('rt.license_number LIKE ?')
+            params.push(`%${license_number}%`)
         }
-        // Normalize stored access level
-        const storeAccess = requested.includes('super') ? 'Super-Admin' : (requested.includes('admin') ? 'Admin' : 'Staff')
-        await adminPool.execute('UPDATE Staff SET access_level = ? WHERE staff_id = ?', [storeAccess, staffId])
-        return res.status(200).json({ message: 'Staff access_level updated', staff_id: staffId, access_level: storeAccess })
+        const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
+
+        sql = `SELECT
+            ps.parking_log_id,
+            DATE_FORMAT(ps.recorded_time, '%Y-%m-%d') AS date,
+            TIME_FORMAT(ps.recorded_time, '%H:%i:%s') AS time,
+            ps.scanned_RFID_TID AS car_id,
+            rt.license_number AS license_number,
+            CONCAT(t.first_name, ' ', t.last_name) AS tenant_name,
+            gv.license_number AS guest_license_number,
+            CONCAT(gv.guest_first_name, ' ', gv.guest_last_name) AS guest_name,
+            ps.parking_slot_ID AS parking_slot_id,
+            ps.note AS note,
+            rt.tag_status AS status
+        FROM Parking_Log ps
+        LEFT JOIN RFID_Tag rt ON rt.RFID_TID = ps.scanned_RFID_TID
+        LEFT JOIN Car c ON c.license_number = rt.license_number
+        LEFT JOIN Condo_Room cr ON cr.license_number = c.license_number
+        LEFT JOIN Tenant t ON t.room_id = cr.room_id
+        LEFT JOIN Guest_Visit gv ON gv.guest_RFID_TID = ps.scanned_RFID_TID
+        ${whereSql}
+        ORDER BY ps.recorded_time DESC
+        LIMIT 1000`
+
+        const [rows] = await adminPool.execute(sql, params)
+        console.log('GET /api/admin/parking_log - Sample row date:', rows[0]?.date, 'type:', typeof rows[0]?.date)
+        return res.status(200).json(rows)
     } catch (err) {
-        console.error('Admin modify staff error:', err)
-        return res.status(500).json({ error: 'Server error' })
+        // Detailed logging for debugging: include timestamp, request info, query/sql and stack
+        try {
+            console.error('Error fetching parking_log (GET)')
+            console.error('timestamp:', new Date().toISOString())
+            console.error('url:', req.originalUrl || req.url)
+            console.error('method:', req.method)
+            console.error('query:', req.query)
+            // params and sql may not be defined if error happened earlier; guard access
+            if (typeof params !== 'undefined') console.error('db params:', params)
+            if (typeof sql !== 'undefined') console.error('sql:', sql)
+            if (req.user) console.error('user:', req.user)
+            console.error('error stack:', err && err.stack ? err.stack : err)
+        } catch (logErr) {
+            // If logging itself fails, output minimal error
+            console.error('Error while logging parking_log error:', logErr)
+        }
+
+        return res.status(500).json({ error: 'Error fetching parking log' })
     }
 })
-
 export default router
+
+// POST /api/admin/parking_log - accept JSON body { date, license_number }
+router.post('/parking_log', async (req, res) => {
+    const { date, license_number } = req.body || {}
+    console.log('POST /api/admin/parking_log - date:', date, 'license_number:', license_number)
+    let params = []
+    let sql = ''
+    try {
+        const where = []
+        params = []
+        if (date) {
+            where.push('DATE(ps.recorded_time) = ?')
+            params.push(date)
+        }
+        if (license_number) {
+            where.push('rt.license_number LIKE ?')
+            params.push(`%${license_number}%`)
+        }
+        const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
+
+        sql = `SELECT
+            ps.parking_log_id,
+            DATE_FORMAT(ps.recorded_time, '%Y-%m-%d') AS date,
+            TIME_FORMAT(ps.recorded_time, '%H:%i:%s') AS time,
+            ps.scanned_RFID_TID AS car_id,
+            rt.license_number AS license_number,
+            CONCAT(t.first_name, ' ', t.last_name) AS tenant_name,
+            gv.license_number AS guest_license_number,
+            CONCAT(gv.guest_first_name, ' ', gv.guest_last_name) AS guest_name,
+            ps.parking_slot_ID AS parking_slot_id,
+            ps.note AS note,
+            rt.tag_status AS status
+        FROM Parking_Log ps
+        LEFT JOIN RFID_Tag rt ON rt.RFID_TID = ps.scanned_RFID_TID
+        LEFT JOIN Car c ON c.license_number = rt.license_number
+        LEFT JOIN Condo_Room cr ON cr.license_number = c.license_number
+        LEFT JOIN Tenant t ON t.room_id = cr.room_id
+        LEFT JOIN Guest_Visit gv ON gv.guest_RFID_TID = ps.scanned_RFID_TID
+        ${whereSql}
+        ORDER BY ps.recorded_time DESC
+        LIMIT 1000`
+
+        const [rows] = await adminPool.execute(sql, params)
+        console.log('POST /api/admin/parking_log - Sample row date:', rows[0]?.date, 'type:', typeof rows[0]?.date)
+        return res.status(200).json(rows)
+    } catch (err) {
+        try {
+            console.error('Error fetching parking_log (POST)')
+            console.error('timestamp:', new Date().toISOString())
+            console.error('url:', req.originalUrl || req.url)
+            console.error('method:', req.method)
+            console.error('body:', req.body)
+            if (typeof params !== 'undefined') console.error('db params:', params)
+            if (typeof sql !== 'undefined') console.error('sql:', sql)
+            if (req.user) console.error('user:', req.user)
+            console.error('error stack:', err && err.stack ? err.stack : err)
+        } catch (logErr) {
+            console.error('Error while logging parking_log POST error:', logErr)
+        }
+        return res.status(500).json({ error: 'Error fetching parking log' })
+    }
+})
