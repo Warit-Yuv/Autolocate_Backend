@@ -258,6 +258,7 @@ DELIMITER ;
 --              trigger would activate the guest's RFID tag by setting
 --              its status to 'InUse' and updating the current_EPC.
 -- =============================================
+USE condoparkingdb;
 DELIMITER $$
 CREATE TRIGGER trg_GuestCheckIn
 AFTER INSERT ON Guest_Visit
