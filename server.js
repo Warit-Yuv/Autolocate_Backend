@@ -6,6 +6,7 @@ import tenantRouter from './routes/tenant.js'
 import adminRouter from './routes/admin.js'
 import staffRouter from './routes/staff.js'
 import authRouter from './routes/auth.js'
+import rfidRouter from './routes/RFID.js'
 dotenv.config()
 
 const app = express()
@@ -20,7 +21,7 @@ app.use(cors({
     // Allow requests with no origin (curl, Postman, server-to-server)
     if (!incomingOrigin) return callback(null, true)
     if (FRONTEND_ORIGINS.includes(incomingOrigin)) {
-      console.log(`CORS: allowing origin ${incomingOrigin}`)
+      // console.log(`CORS: allowing origin ${incomingOrigin}`)
       return callback(null, true)
     }
     // Log rejected origins for debugging and return false (no ACAO header will be set)
@@ -34,6 +35,7 @@ app.use(express.json());
 app.use('/api/tenant', tenantRouter)
 app.use('/api/staff', staffRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/rfid', rfidRouter)
 app.use('/api/auth', authRouter)
 app.set('view engine', 'ejs')
 

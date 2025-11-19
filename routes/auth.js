@@ -10,8 +10,10 @@ router.get('/me', jwtAuth, (req, res) => {
 
 // POST /logout - clears cookie
 router.post('/logout', (req, res) => {
-  clearToken(res)
-  return res.status(200).json({ message: 'Logged out' })
+  const username = req.body.username || (req.user && req.user.username) || 'Unknown';
+  clearToken(res);
+  console.log(`User ${username} logged out, token cookie cleared.`);
+  return res.status(200).json({ message: `Logged out user: ${username}` });
 })
 
 export default router
