@@ -77,7 +77,7 @@ router.post('/parking_log_search', jwtAuth, requireRole('staff', 'admin', 'super
 router.post('/dashboard', jwtAuth, requireRole('staff', 'admin', 'super-admin'), async (req, res) => {
     try {
         console.log('Fetching dashboard data for staff');
-        const [rows] = await staffPool.execute('SELECT rt.tag_status,count(rt.RFID_TID) FROM RFID_Tag rt where rt.tag_type="Guest" Group by tag_status ');
+        const [rows] = await staffPool.execute('SELECT rt.tag_status,count(rt.RFID_TID) as count_num FROM RFID_Tag rt where rt.tag_type="Guest" Group by tag_status ');
         res.status(200).json({ dashboard: rows });
     } catch (err) {
         console.error('Error fetching tenants:', err);
