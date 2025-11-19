@@ -101,9 +101,9 @@ router.post('/guest_management', jwtAuth, requireRole('staff', 'admin', 'super-a
 
         if (carCheck.length === 0) {
             await staffPool.execute(
-                `INSERT INTO car (license_number, brand, model, color)
-             VALUES (?, ?, ?, ?)`,
-                [license_number, brand, model, color]
+                `INSERT INTO car (license_number, brand, model, color,staff_id)
+             VALUES (?, ?, ?, ?,?)`,
+                [license_number, brand, model, color,staff_id]
             );
             console.log(`Car inserted: ${license_number}`);
         } else {
