@@ -456,6 +456,269 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "RFID - Authenticate (POST)",
+			"id": "rfid-auth-1",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"rfid_tid\": \"TID123\",\n  \"rfid_epc\": \"EPC456\",\n  \"gate_name\": \"MainGate\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/authenticate",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Gate Logs - List (GET)",
+			"id": "rfid-gatelogs-list",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/gate-logs?page=1&limit=50",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"gate-logs"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "limit",
+							"value": "50"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Gate Logs - Get (GET)",
+			"id": "rfid-gatelogs-get",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/gate-logs/:id",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"gate-logs",
+						":id"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Gate Logs - Create (POST)",
+			"id": "rfid-gatelogs-create",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"direction\": \"Arrival\",\n  \"gate_name\": \"MainGate\",\n  \"scanned_RFID_TID\": \"TID123\",\n  \"scanned_EPC\": \"EPC456\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/gate-logs",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"gate-logs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Gate Logs - Update (PATCH)",
+			"id": "rfid-gatelogs-update",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"direction\": \"Departure\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/gate-logs/:id",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"gate-logs",
+						":id"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Gate Logs - Delete (DELETE)",
+			"id": "rfid-gatelogs-delete",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/gate-logs/:id",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"gate-logs",
+						":id"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Tags - List (GET)",
+			"id": "rfid-tags-list",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/tags",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"tags"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Tags - Create (POST)",
+			"id": "rfid-tags-create",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"rfid_tid\": \"TID123\",\n  \"tag_type\": \"Tenant\",\n  \"tag_status\": \"Active\",\n  \"license_number\": \"ABC123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/tags",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"tags"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Tags - Update (PATCH)",
+			"id": "rfid-tags-update",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tag_status\": \"InUse\",\n  \"current_EPC\": \"EPC999\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/tags/:tid",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"tags",
+						":tid"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RFID - Tags - Delete (DELETE)",
+			"id": "rfid-tags-delete",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/rfid/tags/:tid",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"rfid",
+						"tags",
+						":tid"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"variable": [
@@ -465,7 +728,7 @@
 		},
 		{
 			"key": "NotoUrl",
-			"value": "",
+			"value": "https://testapi.notonoty.me",
 			"type": "default"
 		}
 	]
