@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS RFID_Tag (
 -- Table: Gate_Arrival_Departure
 CREATE TABLE IF NOT EXISTS Gate_Arrival_Departure (
     gate_log_id INT AUTO_INCREMENT,
-    direction ENUM('Arrival', 'Departure'),
+    direction ENUM('Arrival', 'Departure', 'Failed_Arrival', 'Failed_Departure'),
     time_stamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     gate_name VARCHAR(50),
     scanned_RFID_TID VARCHAR(100),
@@ -174,7 +174,8 @@ COMMIT;
 
 START TRANSACTION;
 -- Create Trigger and Procedure
-
+use condoparkingdb;
+DROP PROCEDURE IF EXISTS sp_AuthenticateGate_RFID;
 DELIMITER $$
 -- -- Stored Procedure to authenticate gate entry using RFID (TID + EPC) ----
 -- =============================================
@@ -220,7 +221,7 @@ BEGIN
         INSERT INTO Gate_Arrival_Departure 
             (direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC)
         VALUES 
-            ('Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
+            ('Failed_Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
             
     ELSE
         -- A tag was found, now check its status
@@ -245,11 +246,11 @@ BEGIN
             INSERT INTO Gate_Arrival_Departure 
                 (direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC)
             VALUES 
-                ('Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
+                ('Failed_Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
         END IF;
     END IF;
 
-END;$$
+END$$
 DELIMITER ;
 
 ---- Trigger to Automate Guest Tag Activation for Guest Check-In ----
