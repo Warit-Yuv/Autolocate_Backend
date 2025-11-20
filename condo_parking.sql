@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS RFID_Tag (
 -- Table: Gate_Arrival_Departure
 CREATE TABLE IF NOT EXISTS Gate_Arrival_Departure (
     gate_log_id INT AUTO_INCREMENT,
-    direction ENUM('Arrival', 'Departure'),
+    direction ENUM('Arrival', 'Departure', 'Failed_Arrival', 'Failed_Departure'),
     time_stamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     gate_name VARCHAR(50),
     scanned_RFID_TID VARCHAR(100),
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS Gate_Arrival_Departure (
 
 -- Table: Condo_Room
 CREATE TABLE IF NOT EXISTS Condo_Room (
-    room_id INT AUTO_INCREMENT,
+    room_id INT,
     building VARCHAR(50),
     floor INT,
     room_type VARCHAR(50),
@@ -170,11 +170,39 @@ CREATE TABLE IF NOT EXISTS Parking_Log (
         ON UPDATE CASCADE
 );
 
+-- Table: Gate_Log_Archive (Stores deleted gate logs)
+CREATE TABLE IF NOT EXISTS Gate_Log_Archive (
+    archive_id INT AUTO_INCREMENT,
+    original_gate_log_id INT,
+    direction VARCHAR(50),
+    time_stamp DATETIME,
+    gate_name VARCHAR(50),
+    scanned_RFID_TID VARCHAR(100),
+    scanned_EPC VARCHAR(255),
+    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT PK_Gate_Log_Archive PRIMARY KEY (archive_id)
+);
+
+-- Table: Staff_Audit_Log (Stores history of Staff updates/deletes)
+CREATE TABLE IF NOT EXISTS Staff_Audit_Log (
+    log_id INT AUTO_INCREMENT,
+    staff_id INT,
+    action_type VARCHAR(20), -- 'UPDATE' or 'DELETE'
+    old_first_name VARCHAR(50),
+    old_last_name VARCHAR(50),
+    old_position VARCHAR(50),
+    old_access_level VARCHAR(20),
+    old_is_Active BOOLEAN,
+    changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT PK_Staff_Audit_Log PRIMARY KEY (log_id)
+);
+
 COMMIT;
 
 START TRANSACTION;
 -- Create Trigger and Procedure
-
+use condoparkingdb;
+DROP PROCEDURE IF EXISTS sp_AuthenticateGate_RFID;
 DELIMITER $$
 -- -- Stored Procedure to authenticate gate entry using RFID (TID + EPC) ----
 -- =============================================
@@ -187,6 +215,7 @@ CREATE PROCEDURE sp_AuthenticateGate_RFID (
     IN p_rfid_tid VARCHAR(100),
     IN p_rfid_epc VARCHAR(255),
     IN p_gate_name VARCHAR(50),
+    IN p_direction VARCHAR(20),
     
     -- Output parameters for the application/gate
     OUT p_auth_status VARCHAR(20),  -- 'Success' or 'Denied'
@@ -196,6 +225,7 @@ CREATE PROCEDURE sp_AuthenticateGate_RFID (
 BEGIN
     DECLARE v_tag_status VARCHAR(50);
     DECLARE v_tag_type VARCHAR(50);
+    DECLARE v_log_direction VARCHAR(50);
 
     -- 1. Try to find a tag that matches BOTH the TID and the current EPC
     SELECT
@@ -216,11 +246,17 @@ BEGIN
         SET p_message = 'Invalid TID/EPC pair. Access Denied.';
         SET p_auth_success = FALSE;
         
+        IF p_direction = 'Departure' THEN
+            SET v_log_direction = 'Failed_Departure';
+        ELSE
+            SET v_log_direction = 'Failed_Arrival';
+        END IF;
+        
         -- Log the FAILED attempt
         INSERT INTO Gate_Arrival_Departure 
             (direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC)
         VALUES 
-            ('Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
+            (v_log_direction, NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
             
     ELSE
         -- A tag was found, now check its status
@@ -230,34 +266,47 @@ BEGIN
             SET p_message = CONCAT('Access Granted. Type: ', v_tag_type);
             SET p_auth_success = TRUE;
 
+            IF p_direction = 'Departure' THEN
+                SET v_log_direction = 'Departure';
+            ELSE
+                SET v_log_direction = 'Arrival';
+            END IF;
+
             -- Log the SUCCESSFUL attempt
             INSERT INTO Gate_Arrival_Departure 
                 (direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC)
             VALUES 
-                ('Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
+                (v_log_direction, NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
         ELSE
             -- Tag was found but has a bad status (e.g., 'Inactive', 'Lost')
             SET p_auth_status = 'Denied';
             SET p_message = CONCAT('Access Denied. Tag status: ', v_tag_status);
             SET p_auth_success = FALSE;
             
+            IF p_direction = 'Departure' THEN
+                SET v_log_direction = 'Failed_Departure';
+            ELSE
+                SET v_log_direction = 'Failed_Arrival';
+            END IF;
+            
             -- Log the DENIED (but found) attempt
             INSERT INTO Gate_Arrival_Departure 
                 (direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC)
             VALUES 
-                ('Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
+                (v_log_direction, NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
         END IF;
     END IF;
 
-END;$$
+END$$
 DELIMITER ;
 
----- Trigger to Automate Guest Tag Activation for Guest Check-In ----
+-- -- Trigger to Automate Guest Tag Activation for Guest Check-In ----
 -- =============================================
 -- Description: When guard inserts a new Guest_Visit record (check-in),
 --              trigger would activate the guest's RFID tag by setting
 --              its status to 'InUse' and updating the current_EPC.
 -- =============================================
+USE condoparkingdb;
 DELIMITER $$
 CREATE TRIGGER trg_GuestCheckIn
 AFTER INSERT ON Guest_Visit
@@ -274,7 +323,7 @@ BEGIN
 END$$
 DELIMITER ;
 
----- Trigger to Automate Guest Tag Deactivation for Guest Check-Out ----
+-- -- Trigger to Automate Guest Tag Deactivation for Guest Check-Out ----
 -- =============================================
 -- Description: When guard updates a Guest_Visit record with check-out time,
 --              trigger would deactivate the guest's RFID tag by setting
@@ -296,6 +345,61 @@ BEGIN
         WHERE 
             RFID_TID = NEW.guest_RFID_TID;
     END IF;
+END$$
+USE condoparkingdb;
+DELIMITER ;
+
+-- -- Trigger: Archive Gate Log before deletion ----
+-- =============================================
+-- Description: Before a Gate_Arrival_Departure record is deleted,
+--              copy the data to Gate_Log_Archive.
+-- =============================================
+DELIMITER $$
+CREATE TRIGGER trg_GateLog_BeforeDelete
+BEFORE DELETE ON Gate_Arrival_Departure
+FOR EACH ROW
+BEGIN
+    INSERT INTO Gate_Log_Archive (
+        original_gate_log_id, direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC
+    ) VALUES (
+        OLD.gate_log_id, OLD.direction, OLD.time_stamp, OLD.gate_name, OLD.scanned_RFID_TID, OLD.scanned_EPC
+    );
+END$$
+DELIMITER ;
+
+-- -- Trigger: Log Staff updates ----
+-- =============================================
+-- Description: When a Staff record is updated, log the old values
+--              to Staff_Audit_Log.
+-- =============================================
+DELIMITER $$
+CREATE TRIGGER trg_Staff_AfterUpdate
+AFTER UPDATE ON Staff
+FOR EACH ROW
+BEGIN
+    INSERT INTO Staff_Audit_Log (
+        staff_id, action_type, old_first_name, old_last_name, old_position, old_access_level, old_is_Active
+    ) VALUES (
+        OLD.staff_id, 'UPDATE', OLD.first_name, OLD.last_name, OLD.position, OLD.access_level, OLD.is_Active
+    );
+END$$
+DELIMITER ;
+
+-- -- Trigger: Log Staff deletions ----
+-- =============================================
+-- Description: Before a Staff record is deleted, log the old values
+--              to Staff_Audit_Log.
+-- =============================================
+DELIMITER $$
+CREATE TRIGGER trg_Staff_BeforeDelete
+BEFORE DELETE ON Staff
+FOR EACH ROW
+BEGIN
+    INSERT INTO Staff_Audit_Log (
+        staff_id, action_type, old_first_name, old_last_name, old_position, old_access_level, old_is_Active
+    ) VALUES (
+        OLD.staff_id, 'DELETE', OLD.first_name, OLD.last_name, OLD.position, OLD.access_level, OLD.is_Active
+    );
 END$$
 DELIMITER ;
 

@@ -3,10 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title><%= locals.title || 'AutoLocate Backend' %></title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-dot {
+            height: 8px;
+            width: 8px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+        .features {
+            text-align: left;
+            margin-bottom: 2rem;
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .features h3 {
+            margin-top: 0;
+            color: #334155;
+        }
+
+        .features ul {
+            margin: 0;
+            padding-left: 1.2rem;
+            color: #475569;
+        }
+
+        .features li {
+            margin-bottom: 0.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .footer {
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+    </style>
 </head>
 <body>
-    <!-- locals always defined so evenif the parsed content is not defined, if will not error -->
-    <h1>Hello! <%= locals.text %></h1>
+    <div class="container">
+        <div class="logo">🚗🏢</div>
+        <h1><%= locals.title %></h1>
+        <p class="subtitle"><%= locals.description %></p>
+        
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            System Operational
+        </div>
+
+        <div class="features">
+            <h3>API Capabilities:</h3>
+            <ul>
+                <li>Tenant & Staff Authentication (JWT)</li>
+                <li>Real-time Parking Slot Monitoring</li>
+                <li>RFID Gate Access Control & Logging</li>
+                <li>Guest Visit Management</li>
+                <li>Admin Dashboard Support</li>
+            </ul>
+        </div>
+
+        <a href="<%= locals.frontendUrl %>" class="btn">Go to Frontend Application</a>
+
+        <div class="footer">
+            <p>&copy; <%= new Date().getFullYear() %> AutoLocate System. All rights reserved.</p>
+            <p>Server Time: <%= new Date().toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' }) %></p>
+        </div>
+    </div>
 </body>
 </html>
