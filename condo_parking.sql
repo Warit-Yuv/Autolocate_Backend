@@ -170,6 +170,33 @@ CREATE TABLE IF NOT EXISTS Parking_Log (
         ON UPDATE CASCADE
 );
 
+-- Table: Gate_Log_Archive (Stores deleted gate logs)
+CREATE TABLE IF NOT EXISTS Gate_Log_Archive (
+    archive_id INT AUTO_INCREMENT,
+    original_gate_log_id INT,
+    direction VARCHAR(50),
+    time_stamp DATETIME,
+    gate_name VARCHAR(50),
+    scanned_RFID_TID VARCHAR(100),
+    scanned_EPC VARCHAR(255),
+    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT PK_Gate_Log_Archive PRIMARY KEY (archive_id)
+);
+
+-- Table: Staff_Audit_Log (Stores history of Staff updates/deletes)
+CREATE TABLE IF NOT EXISTS Staff_Audit_Log (
+    log_id INT AUTO_INCREMENT,
+    staff_id INT,
+    action_type VARCHAR(20), -- 'UPDATE' or 'DELETE'
+    old_first_name VARCHAR(50),
+    old_last_name VARCHAR(50),
+    old_position VARCHAR(50),
+    old_access_level VARCHAR(20),
+    old_is_Active BOOLEAN,
+    changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT PK_Staff_Audit_Log PRIMARY KEY (log_id)
+);
+
 COMMIT;
 
 START TRANSACTION;
@@ -318,6 +345,61 @@ BEGIN
         WHERE 
             RFID_TID = NEW.guest_RFID_TID;
     END IF;
+END$$
+USE condoparkingdb;
+DELIMITER ;
+
+-- -- Trigger: Archive Gate Log before deletion ----
+-- =============================================
+-- Description: Before a Gate_Arrival_Departure record is deleted,
+--              copy the data to Gate_Log_Archive.
+-- =============================================
+DELIMITER $$
+CREATE TRIGGER trg_GateLog_BeforeDelete
+BEFORE DELETE ON Gate_Arrival_Departure
+FOR EACH ROW
+BEGIN
+    INSERT INTO Gate_Log_Archive (
+        original_gate_log_id, direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC
+    ) VALUES (
+        OLD.gate_log_id, OLD.direction, OLD.time_stamp, OLD.gate_name, OLD.scanned_RFID_TID, OLD.scanned_EPC
+    );
+END$$
+DELIMITER ;
+
+-- -- Trigger: Log Staff updates ----
+-- =============================================
+-- Description: When a Staff record is updated, log the old values
+--              to Staff_Audit_Log.
+-- =============================================
+DELIMITER $$
+CREATE TRIGGER trg_Staff_AfterUpdate
+AFTER UPDATE ON Staff
+FOR EACH ROW
+BEGIN
+    INSERT INTO Staff_Audit_Log (
+        staff_id, action_type, old_first_name, old_last_name, old_position, old_access_level, old_is_Active
+    ) VALUES (
+        OLD.staff_id, 'UPDATE', OLD.first_name, OLD.last_name, OLD.position, OLD.access_level, OLD.is_Active
+    );
+END$$
+DELIMITER ;
+
+-- -- Trigger: Log Staff deletions ----
+-- =============================================
+-- Description: Before a Staff record is deleted, log the old values
+--              to Staff_Audit_Log.
+-- =============================================
+DELIMITER $$
+CREATE TRIGGER trg_Staff_BeforeDelete
+BEFORE DELETE ON Staff
+FOR EACH ROW
+BEGIN
+    INSERT INTO Staff_Audit_Log (
+        staff_id, action_type, old_first_name, old_last_name, old_position, old_access_level, old_is_Active
+    ) VALUES (
+        OLD.staff_id, 'DELETE', OLD.first_name, OLD.last_name, OLD.position, OLD.access_level, OLD.is_Active
+    );
 END$$
 DELIMITER ;
 
