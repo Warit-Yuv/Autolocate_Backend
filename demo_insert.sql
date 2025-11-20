@@ -10,11 +10,11 @@ START TRANSACTION;
 -- (IDs will be 1: John, 2: Jane)
 INSERT INTO Staff (first_name, last_name, position, username, password_hash, access_level, is_Active)
 VALUES 
-('Warit', 'Yuvaniyama', 'IT Head', 'notonoty', '$2b$10$RBw5ppTAHHIQRcrTtPB8oO9QxySWP4cFe1GcZqF7YfkbdvIpo0NPq', 'Super-Admin', 1); -- Password: Superadmin123
+('Warit', 'Yuvaniyama', 'IT Head', 'notonoty', '$2b$10$mYS40K5ikpZo8NK40NY8ieEqnif2wOwCuRLhXYpsTCFtMr75ZZA0K', 'Super-Admin', 1), -- Password: superadmin123
 ('Jane', 'Smith', 'Security', 'janesmith', '$2b$10$8jHpr4mv4XPcTG10NByKwuc73JPPiHALDI7OXvZmlTvedP87oJND6', 'Staff', 1), -- Password: staff123
 ('Mike', 'Brown', 'Security', 'mikebrown', '$2b$10$wCaDFr1nM9vd9jHqWBVBxeHKQULpmnyKUp.F7.s0pYJzB0f41si7m', 'Staff', 0), -- Password: staff123 (Inactive)
 ('Emily', 'Davis', 'Security', 'emilydavis', '$2b$10$mSpWNn1CuOOVkkHkm9YEYu0piyBkk/seTivO9TibEgiR1nSgDQLwq', 'Staff', 1), -- Password: staff123
-('John', 'Doe', 'Manager', 'johndoe', '$2b$10$yiwyVLzCBbgsBnQ2maJqyO7QbczS7JAcvILOpu3M5xa3uwdXORddm', 'Admin', 1), -- Password: admin123
+('John', 'Doe', 'Manager', 'johndoe', '$2b$10$yiwyVLzCBbgsBnQ2maJqyO7QbczS7JAcvILOpu3M5xa3uwdXORddm', 'Admin', 1); -- Password: admin123
 
 -- 2. Parking_Slot (No dependencies)
 INSERT INTO parking_slot (parking_slot_id, floor, slot_type) VALUES
@@ -84,6 +84,9 @@ INSERT INTO parking_slot (parking_slot_id, floor, slot_type) VALUES
 ('A-319', '3', 'Fixed_slot'),
 ('A-320', '3', 'Fixed_slot');
 
+COMMIT;
+START TRANSACTION;
+
 -- 3. Car (Depends on Staff)
 INSERT INTO Car (license_number, brand, model, color, staff_id)
 VALUES
@@ -107,6 +110,9 @@ VALUES
 ('UI-6677', 'Jeep', 'Grand Cherokee', 'White', 4),
 ('OP-8899', 'Ram', '1500', 'Silver', 4),
 ('VV-1000', 'Porsche', '911', 'Yellow', 2);
+
+COMMIT;
+START TRANSACTION;
 
 -- 4. Condo_Room (Depends on Car)
 -- (IDs will be 1: A-101, 2: A-102)
@@ -148,6 +154,9 @@ VALUES
 ('2201', 'A', '22', '2-Bedroom', NULL),
 ('2202', 'A', '22', '2-Bedroom', 'OP-8899'),
 ('2501', 'A', '25', 'Penthouse', 'VV-1000');
+
+COMMIT;
+START TRANSACTION;
 
 -- 5. Tenant (Depends on Condo_Room)
 INSERT INTO Tenant (username, password_hash, first_name, last_name, gender, tel_no, email, is_primary_contact, tenant_status, room_id)
@@ -256,7 +265,7 @@ VALUES
 ('TID_TENANT_1202', 'EPC_TENANT_1202', 'Tenant', 'Active', 'KL-1122'),
 ('TID_TENANT_1402', 'EPC_TENANT_1402', 'Tenant', 'Active', 'RE-4567'),
 ('TID_TENANT_1501', 'EPC_TENANT_1501', 'Tenant', 'Active', 'MN-3344'),
-('TID_TENANT_1601', 'EPC_TENANT_1601', 'Tenant', 'Inctive', 'PP-9876'),
+('TID_TENANT_1601', 'EPC_TENANT_1601', 'Tenant', 'Inactive', 'PP-9876'),
 ('TID_TENANT_1701', 'EPC_TENANT_1701', 'Tenant', 'Active', 'QW-1110'),
 ('TID_TENANT_1801', 'EPC_TENANT_1801', 'Tenant', 'Active', 'ER-2233'),
 ('TID_TENANT_2001', 'EPC_TENANT_2001', 'Tenant', 'Active', 'TY-4455'),

@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS Gate_Arrival_Departure (
 
 -- Table: Condo_Room
 CREATE TABLE IF NOT EXISTS Condo_Room (
-    room_id INT AUTO_INCREMENT,
+    room_id INT,
     building VARCHAR(50),
     floor INT,
     room_type VARCHAR(50),
@@ -253,7 +253,7 @@ BEGIN
 END$$
 DELIMITER ;
 
----- Trigger to Automate Guest Tag Activation for Guest Check-In ----
+-- -- Trigger to Automate Guest Tag Activation for Guest Check-In ----
 -- =============================================
 -- Description: When guard inserts a new Guest_Visit record (check-in),
 --              trigger would activate the guest's RFID tag by setting
@@ -276,7 +276,7 @@ BEGIN
 END$$
 DELIMITER ;
 
----- Trigger to Automate Guest Tag Deactivation for Guest Check-Out ----
+-- -- Trigger to Automate Guest Tag Deactivation for Guest Check-Out ----
 -- =============================================
 -- Description: When guard updates a Guest_Visit record with check-out time,
 --              trigger would deactivate the guest's RFID tag by setting
