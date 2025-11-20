@@ -34,7 +34,7 @@ router.post('/auth', async (req, res) => {
     console.log(`Password provided: ${password}`);
     try {
         const [rows] = await tenantPool.execute(
-            'SELECT tenant_id, username, password_hash, first_name, last_name FROM Tenant WHERE username = ?',
+            'SELECT tenant_id, username, password_hash, first_name, last_name, tenant_status FROM Tenant WHERE username = ?',
             [username]
         )
         if (!rows || rows.length === 0) {
@@ -42,6 +42,12 @@ router.post('/auth', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' })
         }
         const user = rows[0]
+        
+        if (user.tenant_status !== 'Active') {
+            console.log(`Tenant ${username} is not active. Status: ${user.tenant_status}`);
+            return res.status(403).json({ error: 'Account is inactive' });
+        }
+
         const match = await bcrypt.compare(password, user.password_hash)
         if (!match) {
             console.log(`Password mismatch for username: ${username}`);

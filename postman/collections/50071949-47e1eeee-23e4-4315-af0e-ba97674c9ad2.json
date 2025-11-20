@@ -1,0 +1,472 @@
+{
+	"info": {
+		"_postman_id": "50071949-47e1eeee-23e4-4315-af0e-ba97674c9ad2",
+		"name": "AutoLocate Backend - API Tests",
+		"description": "Collection for testing AutoLocate Backend APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Tenant - Login (POST)",
+			"id": "50071949-843b9eb2-ef9f-4363-93dd-ddd20335d6fb",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"test1\",\n  \"password\": \"test1\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/tenant/auth",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"tenant",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Staff - Login (POST)",
+			"id": "50071949-9c0ea301-82b4-4fad-8f15-4a0b2625a773",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"staff1\",\n  \"password\": \"staffpass\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/staff/auth",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"staff",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - Login (POST)",
+			"id": "50071949-33a09fb4-25b4-47bb-9981-2eaf8cf32847",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"adminpass\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/auth",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Me (GET)",
+			"id": "50071949-06088019-397e-4959-b722-20b8cf4e44d6",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/me",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"me"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Logout (POST)",
+			"id": "50071949-ac166fe1-6417-4e11-a426-dede5400ebe4",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/logout",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tenant - DB Connection Test (GET)",
+			"id": "50071949-70b05e24-8fad-4061-989d-939ea60424eb",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/tenant/test-db-connection",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"tenant",
+						"test-db-connection"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tenant - List Tenants (GET)",
+			"id": "50071949-5957c2ca-642a-466d-b255-752ab570330b",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/hashme?password=admin123",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"hashme"
+					],
+					"query": [
+						{
+							"key": "password",
+							"value": "admin123"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tenant - Carlocation",
+			"id": "50071949-f91955c7-b796-4bc7-b63b-8dec9907b9db",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"test1\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/tenant/carlocation",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"tenant",
+						"carlocation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tenant - VehicleDirection",
+			"id": "50071949-ff91ea8b-1599-4406-bf12-247ec395b898",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"license_number\": \"BK-1111\" }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{NotoUrl}}/api/tenant/vehicleDirection",
+					"host": [
+						"{{NotoUrl}}"
+					],
+					"path": [
+						"api",
+						"tenant",
+						"vehicleDirection"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - Create Tenant (POST)",
+			"id": "50071949-a640856b-4c3e-45e8-ba36-f9654ae8a563",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"new_tenant\",\n  \"password\": \"newpass\",\n  \"first_name\": \"New\",\n  \"last_name\": \"Tenant\",\n  \"email\": \"new@example.com\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/tenants",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"tenants"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - Create Staff (POST)",
+			"id": "50071949-5b3960d8-8b35-428d-abc7-02a1128a1a27",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"new_staff\",\n  \"password\": \"staffpass\",\n  \"first_name\": \"Staff\",\n  \"last_name\": \"Member\",\n  \"position\": \"guard\",\n  \"access_level\": \"staff\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/admin/staff",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"staff"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Staff - parking log search",
+			"id": "50071949-670bf6eb-1301-48e0-bcfd-4571ff4662e9",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "https://testapi.notonoty.me/api/staff/parking_log_search",
+					"protocol": "https",
+					"host": [
+						"testapi",
+						"notonoty",
+						"me"
+					],
+					"path": [
+						"api",
+						"staff",
+						"parking_log_search"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - get staff info",
+			"id": "50071949-d1735bfd-211d-4493-8e70-90ed136163a1",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{NotoUrl}}/api/admin/staff-info",
+					"host": [
+						"{{NotoUrl}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"staff-info"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - get gest visit",
+			"id": "50071949-6e74565a-1a72-421e-87a7-14562d8c4fec",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - get tenant list",
+			"id": "50071949-f0c957e6-1ca9-4213-826e-79e3ba2d2fbb",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Staff - Show dashboard",
+			"id": "50071949-57dd6088-b22e-45dc-b1f4-3d16bd345c8b",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{NotoUrl}}/api/staff/dashboard",
+					"host": [
+						"{{NotoUrl}}"
+					],
+					"path": [
+						"api",
+						"staff",
+						"dashboard"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Admin - parking log",
+			"id": "50071949-b38ab63c-404b-4b5d-ba4f-a341a1a0e942",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://testapi.notonoty.me/api/admin/parking-log",
+					"protocol": "https",
+					"host": [
+						"testapi",
+						"notonoty",
+						"me"
+					],
+					"path": [
+						"api",
+						"admin",
+						"parking-log"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3001"
+		},
+		{
+			"key": "NotoUrl",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
