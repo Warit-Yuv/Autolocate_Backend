@@ -13,11 +13,17 @@ router.post('/auth', async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Missing username or password' })
     try {
         const [rows] = await staffPool.execute(
-            'SELECT staff_id, username, password_hash, first_name, last_name, access_level FROM Staff WHERE username = ?',
+            'SELECT staff_id, username, password_hash, first_name, last_name, access_level, is_Active FROM Staff WHERE username = ?',
             [username]
         )
         if (!rows || rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' })
         const user = rows[0]
+
+        if (!user.is_Active) {
+            console.log(`Staff ${username} is not active.`);
+            return res.status(403).json({ error: 'Account is inactive' });
+        }
+
         const match = await bcrypt.compare(password, user.password_hash)
         if (!match) return res.status(401).json({ error: 'Invalid credentials' })
         console.log(`Login successful for username: ${username}`);

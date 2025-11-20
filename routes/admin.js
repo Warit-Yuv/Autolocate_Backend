@@ -12,11 +12,17 @@ router.post('/auth', async (req, res) => {
     try {
         console.log('Admin auth login request for username:', username)
         const [rows] = await adminPool.execute(
-            'SELECT staff_id, username, password_hash, first_name, last_name, access_level FROM Staff WHERE username = ?',
+            'SELECT staff_id, username, password_hash, first_name, last_name, access_level, is_Active FROM Staff WHERE username = ?',
             [username]
         )
         if (!rows || rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' })
         const user = rows[0]
+
+        if (!user.is_Active) {
+            console.log(`Admin ${username} is not active.`);
+            return res.status(403).json({ error: 'Account is inactive' });
+        }
+
         // Normalize access level from DB and decide role
         const levelRaw = (user.access_level || '').toString().trim().toLowerCase()
         const isSuper = levelRaw.includes('super')
