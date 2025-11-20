@@ -1,120 +1,293 @@
-# AutoLocate Backend — API Reference
+# AutoLocate Backend
 
-This README documents the backend API endpoints, middleware behavior, environment variables required, and notes about JWT blacklisting.
+This is the backend service for the AutoLocate Condo Parking system. It provides APIs for tenants, staff, and administrators to manage parking, guests, and RFID access.
 
-## Overview
+## Project Overview
 
-- Server: Express (ES modules)
-- DB: MySQL (via `mysql2/promise`)
-- Auth: JWT stored in an HttpOnly cookie (middleware in `middleware/auth.js`)
-- Three DB connection pools (in `db.js`): `adminPool`, `staffPool`, `tenantPool` — each use a DB user with appropriate privileges.
+- **Server**: Express (ES modules)
+- **Database**: MySQL (via `mysql2/promise`)
+- **Authentication**: JWT stored in an HttpOnly cookie (middleware in `middleware/auth.js`)
+- **Database Architecture**: Three DB connection pools (in `db.js`): `adminPool`, `staffPool`, `tenantPool` — each uses a DB user with appropriate privileges for security.
 
-## Key files
+## Key Files
 
-- `server.js` — app bootstrap and router mounts
-- `db.js` — database connection pools
-- `middleware/auth.js` — JWT issuing/verifying and role middleware
-- `routes/tenant.js` — tenant-related endpoints (login, list/test-db)
-- `routes/staff.js` — staff auth (login)
-- `routes/admin.js` — admin auth (login) and admin-only management endpoints (`/tenants`, `/staff`)
-- `routes/auth.js` — `/api/auth/me` and `/api/auth/logout`
-- `scripts/seed_test_tenant.js` — demo/seed helper
+- `server.js` — App bootstrap, middleware configuration, and router mounts.
+- `db.js` — Database connection pools configuration.
+- `middleware/auth.js` — JWT issuing/verifying and role-based access control middleware.
+- `routes/tenant.js` — Tenant-related endpoints (login, car location, vehicle direction).
+- `routes/staff.js` — Staff authentication and management endpoints (dashboard, guest management).
+- `routes/admin.js` — Admin authentication and system management (staff/tenant creation, parking logs).
+- `routes/RFID.js` — RFID gate authentication and logging endpoints.
+- `routes/auth.js` — General authentication utilities (`/me`, `/logout`).
+- `scripts/seed_test_tenant.js` — Demo/seed helper script.
 
-## Environment variables
+## Getting Started
 
-Create a `.env` in the backend root. Minimal recommended variables with example values:
+### Prerequisites
 
-```
+- Node.js (v14 or higher)
+- MySQL Database
+
+### Installation
+
+1.  Clone the repository.
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Set up the database:
+    - Create a database named `CondoParkingDB`.
+    - Run the SQL script `condo_parking.sql` to create tables and stored procedures.
+    - (Optional) Run `demo_insert.sql` to seed the database with test data.
+4.  Configure environment variables:
+    - Create a `.env` file based on the example below.
+5.  Start the server:
+    ```bash
+    npm start
+    # or for development with nodemon
+    npm run dev
+    ```
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
 PORT=3001
+NODE_ENV=development
 
+# Database Configuration
 DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=CondoParkingDB
 
-ADMIN_DB_USER=admin_user
-ADMIN_DB_PASS=admin_pass
-STAFF_DB_USER=staff_user
-STAFF_DB_PASS=staff_pass
-TENANT_DB_USER=tenant_user
-TENANT_DB_PASS=tenant_pass
+# Database Users (Security Best Practice: Use different users with specific privileges)
+ADMIN_DB_USER=adminpool
+ADMIN_DB_PASS=admin_secure_password1
+STAFF_DB_USER=staffpool
+STAFF_DB_PASS=staff_secure_password1
+TENANT_DB_USER=tenantpool
+TENANT_DB_PASS=tenant_secure_password1
 
-# JWT / Cookie configuration
+# JWT Configuration
 JWT_SECRET=your_strong_jwt_secret
 JWT_EXPIRES_IN=15m
-JWT_COOKIE_NAME=auth_token
+JWT_COOKIE_NAME=token
 JWT_COOKIE_MAX_AGE_MS=900000
+JWT_SAMESITE=lax
+# Set to 'true' in production with HTTPS
+COOKIE_SECURE=false
+# Optional: Domain for the cookie
+# COOKIE_DOMAIN=.yourdomain.com
+# Optional: Path for the cookie
+COOKIE_PATH=/
 
-# Cookie/CORS behavior (production)
-# FRONTEND_ORIGIN must match the actual frontend origin (protocol + host + port)
-FRONTEND_ORIGIN=https://app.yourdomain.com
-JWT_SAMESITE=none       # use 'none' for cross-site cookies
-COOKIE_SECURE=true      # must be true when JWT_SAMESITE=none (browsers require Secure)
-COOKIE_DOMAIN=.yourdomain.com  # optional: share cookie across subdomains
+# CORS Configuration
+# Comma-separated list of allowed origins
+FRONTEND_ORIGIN=http://localhost:3000,https://your-frontend-domain.com
 
-# Optional development flag (do NOT enable in production)
+# Optional: Send JWT in response body (useful for testing/dev)
 # JWT_SEND_IN_BODY=true
 ```
 
-Notes:
+## API Endpoints
 
-- `JWT_SAMESITE=none` + `COOKIE_SECURE=true` required for cross-origin cookie flows (frontend and API on different origins).
-- If API is `https://testapi.notonoty.me` and frontend is `http://localhost:3000`, keep `FRONTEND_ORIGIN=http://localhost:3000`.
-- `COOKIE_DOMAIN` is optional. If omitted, the cookie is scoped to the API host (e.g. `testapi.notonoty.me`).
+All API endpoints are prefixed with `/api`.
 
-## Production / Cross-origin setup (frontend on other host)
+### Authentication
 
-If your frontend runs on another machine at `http://localhost:3000` and your backend is `https://testapi.notonoty.me`, then to allow the browser to receive and send the auth cookie you must:
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/auth/me` | Get current logged-in user details | Yes |
+| `POST` | `/api/auth/logout` | Logout user (clears cookie) | No |
 
-1. Serve the backend over HTTPS (your backend already uses `https://testapi.notonoty.me`).
-2. Configure env vars:
-  - `FRONTEND_ORIGIN=http://localhost:3000` (so the server responds with that exact origin in `Access-Control-Allow-Origin`).
-  - `JWT_SAMESITE=none`
-  - `COOKIE_SECURE=true`
-  - (optional) `COOKIE_DOMAIN=.notonoty.me` if you want the cookie available across subdomains.
-3. Ensure server sets CORS with `credentials: true` (the app already does this in `server.js`).
-4. On the frontend, include credentials on requests:
-  - `fetch(url, { credentials: 'include', ... })` or `axios(..., { withCredentials: true })`.
+**Example `/api/auth/logout` Body:**
+```json
+{
+  "username": "optional_username_for_logging"
+}
+```
 
-Important browser behavior:
-- When `SameSite=None` and `Secure=true`, the cookie will be accepted by the browser and sent with cross-site requests to `https://testapi.notonoty.me` even if the page origin is `http://localhost:3000` — but only when the request is made to the cookie's domain (the API host).
-- The cookie is tied to the API domain. For typical setups you do NOT set cookies for `localhost` when the API is on a different domain.
-- If you need the cookie shared across subdomains (e.g., `app.notonoty.me` and `api.notonoty.me`), set `COOKIE_DOMAIN=.notonoty.me`.
+---
 
-If you prefer not to deal with cross-site cookies, alternatives:
-- Host frontend under the same origin as API (e.g. `app.notonoty.me` and `api.notonoty.me` proxied so origin matches), or
-- Use access tokens sent in `Authorization: Bearer <token>` (requires storing tokens in memory or localStorage — less secure than HttpOnly cookies).
+### Tenant
 
-## API endpoints
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/tenant/auth` | Tenant Login | No |
+| `GET` | `/api/tenant/test-db-connection` | Test DB connection | No |
+| `POST` | `/api/tenant/carlocation` | Get car location | Yes (Tenant+) |
+| `POST` | `/api/tenant/vehicleDirection` | Get recent vehicle direction | Yes (Tenant+) |
 
-All endpoints are mounted under `/api`.
+**Example `/api/tenant/auth` Body:**
+```json
+{
+  "username": "sophia_w",
+  "password": "tenant123"
+}
+```
 
-- Auth endpoints
-  - POST `/api/tenant/auth` — tenant login. Body: `{ username, password }`. On success sets an HttpOnly JWT cookie and returns tenant info (response key `tenant`).
-  - POST `/api/staff/auth` — staff login. Body: `{ username, password }`. Sets JWT cookie with role `staff`.
-  - POST `/api/admin/auth` — admin login. Body: `{ username, password }`. Sets JWT cookie with role `admin` or `super-admin` depending on the DB `access_level`.
-  - GET `/api/auth/me` — returns `{ user: { id, role } }` from verified token. Requires cookie; returns 401 if missing/invalid.
-  - POST `/api/auth/logout` — clears JWT cookie.
+**Example `/api/tenant/carlocation` Body:**
+```json
+{
+  "username": "sophia_w"
+}
+```
 
-- Tenant endpoints
-  - GET `/api/tenant/test-db-connection` — quick DB connectivity test.
-  - GET `/api/tenant/tenants` — lists tenants (uses tenant DB pool).
-  - POST `/api/tenant/auth` — tenant login (see above). Returns `{ tenant: { tenant_id, username, first_name, last_name } }` on success (in addition to setting the cookie).
+**Example `/api/tenant/vehicleDirection` Body:**
+```json
+{
+  "license_number": "AB-1234"
+}
+```
 
-- Admin endpoints (admin-only — require valid JWT and `role === 'admin'`)
-  - POST `/api/admin/tenants` — create a new tenant. Body: `{ username, password, first_name?, last_name?, phone?, email?, gender?, is_primary_contact?, room_id?, is_Active? }`. This endpoint accepts both `admin` and `super-admin` roles.
-  - POST `/api/admin/staff` — create a new staff. Body: `{ username, password, first_name?, last_name?, position?, access_level?, is_Active? }`.
-    - Creating/promoting to `Admin` or `Super-Admin` requires the caller to be `super-admin`.
-  - PATCH `/api/admin/staff/:id` — modify a staff user's `access_level`. Promoting to or modifying admin-level users requires `super-admin`.
+---
 
-- Staff endpoints
-  - POST `/api/staff/auth` — staff login (see above).
+### Staff
 
-## Testing
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/staff/auth` | Staff Login | No |
+| `GET` | `/api/staff/tenants` | List all tenants | Yes (Staff+) |
+| `POST` | `/api/staff/parking_log_search` | Search parking logs | Yes (Staff+) |
+| `POST` | `/api/staff/dashboard` | Get dashboard statistics | Yes (Staff+) |
+| `POST` | `/api/staff/guest_management` | Register a guest visit | Yes (Staff+) |
 
-- Start server: `npm run dev` or `npm start`.
-- Login from the frontend or use `curl`/Postman with cookies enabled.
+**Example `/api/staff/auth` Body:**
+```json
+{
+  "username": "janesmith",
+  "password": "staff123"
+}
+```
+
+**Example `/api/staff/guest_management` Body:**
+```json
+{
+  "license_number": "GV-8888",
+  "brand": "Honda",
+  "model": "Civic",
+  "color": "Black",
+  "firstname": "Alice",
+  "lastname": "Wonder",
+  "gender": "F",
+  "note": "Visiting room 501",
+  "room_id": 501,
+  "guest_RFID_TID": "TID_GUEST_006",
+  "visit_EPC": "EPC_GUEST_006",
+  "staff_id": 2
+}
+```
+
+---
+
+### Admin
+
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/admin/auth` | Admin Login | No |
+| `GET` | `/api/admin/staff-info` | Get all staff information | Yes (Admin+) |
+| `GET` | `/api/admin/get/staff/:id` | Get single staff details | Yes (Admin+) |
+| `POST` | `/api/admin/staff` | Create new staff | Yes (Admin+) |
+| `PATCH` | `/api/admin/staff/:id` | Update staff details | Yes (Admin+) |
+| `GET` | `/api/admin/tenants` | List tenants (paginated) | Yes (Admin+) |
+| `GET` | `/api/admin/tenants/:id` | Get single tenant details | Yes (Admin+) |
+| `POST` | `/api/admin/tenants` | Create new tenant | Yes (Admin+) |
+| `PATCH` | `/api/admin/tenants/:id` | Update tenant details | Yes (Admin+) |
+| `GET` | `/api/admin/tenants/:id/visits` | List visits for a tenant | Yes (Admin+) |
+| `GET` | `/api/admin/guest-visits` | List all guest visits | Yes (Admin+) |
+| `POST` | `/api/admin/guest-visits` | Create guest visit | Yes (Admin+) |
+| `GET` | `/api/admin/parking_log` | Get parking logs | Yes |
+| `POST` | `/api/admin/parking_log` | Get parking logs (via body) | Yes |
+
+**Example `/api/admin/auth` Body:**
+```json
+{
+  "username": "johndoe",
+  "password": "admin123"
+}
+```
+
+**Example `/api/admin/staff` (Create) Body:**
+```json
+{
+  "username": "new_staff_member",
+  "password": "password123",
+  "first_name": "Alice",
+  "last_name": "Smith",
+  "position": "Security",
+  "access_level": "Staff",
+  "is_Active": true
+}
+```
+
+**Example `/api/admin/tenants` (Create) Body:**
+```json
+{
+  "username": "new_tenant_user",
+  "password": "password123",
+  "first_name": "Bob",
+  "last_name": "Jones",
+  "phone": "0812345678",
+  "email": "bob@example.com",
+  "gender": "M",
+  "is_primary_contact": true,
+  "room_id": 501,
+  "is_Active": true
+}
+```
+
+**Example `/api/admin/parking_log` Body:**
+```json
+{
+  "date": "2025-11-20",
+  "license_number": "AB-1234"
+}
+```
+
+---
+
+### RFID & Gate
+
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/rfid/authenticate` | Authenticate RFID at gate | No |
+| `GET` | `/api/rfid/gate-logs` | List gate logs | Yes (Staff+) |
+| `POST` | `/api/rfid/gate-logs` | Create manual gate log | Yes (Staff+) |
+| `GET` | `/api/rfid/gate-logs/:id` | Get single gate log | Yes (Staff+) |
+| `PATCH` | `/api/rfid/gate-logs/:id` | Update gate log | Yes (Staff+) |
+| `DELETE` | `/api/rfid/gate-logs/:id` | Delete gate log | Yes (Staff+) |
+| `GET` | `/api/rfid/tags` | List RFID tags | Yes (Staff+) |
+| `POST` | `/api/rfid/tags` | Create RFID tag | Yes (Staff+) |
+| `PATCH` | `/api/rfid/tags/:tid` | Update RFID tag | Yes (Staff+) |
+| `DELETE` | `/api/rfid/tags/:tid` | Delete RFID tag | Yes (Staff+) |
+
+**Example `/api/rfid/authenticate` Body:**
+```json
+{
+  "rfid_tid": "TID_TENANT_501",
+  "rfid_epc": "EPC_TENANT_501",
+  "gate_name": "Main Gate",
+  "direction": "Arrival"
+}
+```
+
+**Example `/api/rfid/tags` (Create) Body:**
+```json
+{
+  "rfid_tid": "TID_NEW_TAG",
+  "current_EPC": "EPC_NEW_TAG",
+  "tag_type": "Guest",
+  "tag_status": "Available",
+  "license_number": "XYZ-1234"
+}
+```
 
 ## Notes
 
-- Admin endpoints require the JWT with role `admin`. Use the admin login to obtain the cookie before calling `/api/admin/tenants` or `/api/admin/staff`.
-- The admin creation endpoints hash passwords using bcrypt before inserting into the DB.
+- **Live API Endpoint**: The backend is deployed and accessible at `https://testapi.notonoty.me/`. You can use this for testing if you don't want to run the server locally.
+- **Local Development**: By default, the server runs on `http://localhost:3001`.
+- **Security**:
+    - Passwords are hashed using `bcrypt` before storage.
+    - JWT tokens are used for authentication and are stored in HttpOnly cookies.
+    - Ensure your `.env` file is not committed to version control in a real production environment.

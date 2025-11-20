@@ -9,6 +9,20 @@ import authRouter from './routes/auth.js'
 import rfidRouter from './routes/RFID.js'
 dotenv.config()
 
+// Override console.log and console.error to include timestamps
+const originalLog = console.log;
+const originalError = console.error;
+
+console.log = (...args) => {
+  const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' });
+  originalLog(`[${timestamp}]`, ...args);
+};
+
+console.error = (...args) => {
+  const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' });
+  originalError(`[${timestamp}]`, ...args);
+};
+
 const app = express()
 const port = process.env.PORT || 3001
 // Allow frontend origins configured via env to send cookies (credentials)
@@ -41,10 +55,14 @@ app.set('view engine', 'ejs')
 
 app.get('/', (req, res) => {
     console.log('Root endpoint was accessed.');
-//    res.send('Hi there! This is AutoLocate Backend Service.');
-//    res.status(200).json({"message": "Hi there! This is AutoLocate Backend Service."});
-//    res.download("index.js");  // for file download
-    res.render('index', {text: "This is AutoLocate Backend Service."});  // for view rendering
+    // Use the first allowed origin as the main frontend link, or default to localhost:3000
+    const frontendUrl = FRONTEND_ORIGINS.length > 0 ? FRONTEND_ORIGINS[0] : 'http://localhost:3000';
+    
+    res.render('index', {
+        title: "AutoLocate Backend",
+        description: "Smart Condo Parking Management System",
+        frontendUrl: frontendUrl
+    });
 });
 
 app.get('/rr', (req, res) => {
