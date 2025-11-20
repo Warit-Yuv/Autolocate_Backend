@@ -188,6 +188,7 @@ CREATE PROCEDURE sp_AuthenticateGate_RFID (
     IN p_rfid_tid VARCHAR(100),
     IN p_rfid_epc VARCHAR(255),
     IN p_gate_name VARCHAR(50),
+    IN p_direction VARCHAR(20),
     
     -- Output parameters for the application/gate
     OUT p_auth_status VARCHAR(20),  -- 'Success' or 'Denied'
@@ -197,6 +198,7 @@ CREATE PROCEDURE sp_AuthenticateGate_RFID (
 BEGIN
     DECLARE v_tag_status VARCHAR(50);
     DECLARE v_tag_type VARCHAR(50);
+    DECLARE v_log_direction VARCHAR(50);
 
     -- 1. Try to find a tag that matches BOTH the TID and the current EPC
     SELECT
@@ -217,11 +219,17 @@ BEGIN
         SET p_message = 'Invalid TID/EPC pair. Access Denied.';
         SET p_auth_success = FALSE;
         
+        IF p_direction = 'Departure' THEN
+            SET v_log_direction = 'Failed_Departure';
+        ELSE
+            SET v_log_direction = 'Failed_Arrival';
+        END IF;
+        
         -- Log the FAILED attempt
         INSERT INTO Gate_Arrival_Departure 
             (direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC)
         VALUES 
-            ('Failed_Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
+            (v_log_direction, NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
             
     ELSE
         -- A tag was found, now check its status
@@ -231,22 +239,34 @@ BEGIN
             SET p_message = CONCAT('Access Granted. Type: ', v_tag_type);
             SET p_auth_success = TRUE;
 
+            IF p_direction = 'Departure' THEN
+                SET v_log_direction = 'Departure';
+            ELSE
+                SET v_log_direction = 'Arrival';
+            END IF;
+
             -- Log the SUCCESSFUL attempt
             INSERT INTO Gate_Arrival_Departure 
                 (direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC)
             VALUES 
-                ('Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
+                (v_log_direction, NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
         ELSE
             -- Tag was found but has a bad status (e.g., 'Inactive', 'Lost')
             SET p_auth_status = 'Denied';
             SET p_message = CONCAT('Access Denied. Tag status: ', v_tag_status);
             SET p_auth_success = FALSE;
             
+            IF p_direction = 'Departure' THEN
+                SET v_log_direction = 'Failed_Departure';
+            ELSE
+                SET v_log_direction = 'Failed_Arrival';
+            END IF;
+            
             -- Log the DENIED (but found) attempt
             INSERT INTO Gate_Arrival_Departure 
                 (direction, time_stamp, gate_name, scanned_RFID_TID, scanned_EPC)
             VALUES 
-                ('Failed_Arrival', NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
+                (v_log_direction, NOW(), p_gate_name, p_rfid_tid, p_rfid_epc);
         END IF;
     END IF;
 

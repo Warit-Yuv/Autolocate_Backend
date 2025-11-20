@@ -6,14 +6,17 @@ const router = express.Router()
 
 // Authenticate RFID using stored procedure
 // POST /api/rfid/authenticate
-// Body: { rfid_tid, rfid_epc, gate_name }
+// Body: { rfid_tid, rfid_epc, gate_name, direction }
 router.post('/authenticate', async (req, res) => {
-  const { rfid_tid, rfid_epc, gate_name } = req.body || {}
+  const { rfid_tid, rfid_epc, gate_name, direction } = req.body || {}
   if (!rfid_tid || !rfid_epc || !gate_name) return res.status(400).json({ error: 'rfid_tid, rfid_epc and gate_name are required' })
+  
+  const dir = direction || 'Arrival';
+
   try {
-    console.log(`Authenticating RFID TID: ${rfid_tid}, EPC: ${rfid_epc} at gate: ${gate_name}`);
+    console.log(`Authenticating RFID TID: ${rfid_tid}, EPC: ${rfid_epc} at gate: ${gate_name}, direction: ${dir}`);
     // Call stored procedure which logs attempt and sets OUT variables
-    await adminPool.execute('CALL sp_AuthenticateGate_RFID(?, ?, ?, @p_auth_status, @p_message, @p_auth_success)', [rfid_tid, rfid_epc, gate_name])
+    await adminPool.execute('CALL sp_AuthenticateGate_RFID(?, ?, ?, ?, @p_auth_status, @p_message, @p_auth_success)', [rfid_tid, rfid_epc, gate_name, dir])
     const [rows] = await adminPool.execute('SELECT @p_auth_status as auth_status, @p_message as message, @p_auth_success as auth_success')
     // rows is an array with one row
     const result = Array.isArray(rows) && rows.length ? rows[0] : { auth_status: null, message: null, auth_success: null }
