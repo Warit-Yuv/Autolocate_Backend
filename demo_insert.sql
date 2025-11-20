@@ -17,7 +17,7 @@ VALUES
 ('John', 'Doe', 'Manager', 'johndoe', '$2b$10$yiwyVLzCBbgsBnQ2maJqyO7QbczS7JAcvILOpu3M5xa3uwdXORddm', 'Admin', 1); -- Password: admin123
 
 -- 2. Parking_Slot (No dependencies)
-INSERT INTO parking_slot (parking_slot_id, floor, slot_type) VALUES
+INSERT INTO Parking_Slot (parking_slot_ID, floor, slot_type) VALUES
 -- Floor 1 (20 Slots)
 ('A-101', '1', 'Fixed_slot'),
 ('A-102', '1', 'Fixed_slot'),
@@ -109,14 +109,19 @@ VALUES
 ('TY-4455', 'Dodge', 'Charger', 'Red', 2),
 ('UI-6677', 'Jeep', 'Grand Cherokee', 'White', 4),
 ('OP-8899', 'Ram', '1500', 'Silver', 4),
-('VV-1000', 'Porsche', '911', 'Yellow', 2);
+('VV-1000', 'Porsche', '911', 'Yellow', 2),
+('GV-1001', 'Toyota', 'Vios', 'White', 2),
+('GV-1002', 'Honda', 'City', 'Black', 4),
+('GV-1003', 'Mazda', '2', 'Red', 2),
+('GV-1004', 'Nissan', 'Almera', 'Blue', 4),
+('GV-1005', 'Suzuki', 'Swift', 'Green', 2);
 
 COMMIT;
 START TRANSACTION;
 
 -- 4. Condo_Room (Depends on Car)
 -- (IDs will be 1: A-101, 2: A-102)
-INSERT INTO condo_room (room_id, building, floor, room_type, license_number)
+INSERT INTO Condo_Room (room_id, building, floor, room_type, license_number)
 VALUES
 ('501', 'A', '5', 'Studio', 'AB-1234'),
 ('502', 'A', '5', '1-Bedroom', NULL),
