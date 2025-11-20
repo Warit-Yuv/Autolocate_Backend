@@ -138,8 +138,8 @@ router.post('/guest_management', jwtAuth, requireRole('staff', 'admin', 'super-a
             .status(500)
             .json({ error: 'Server error while saving guest visit' });
     }
-}
-);
+  );
+  
 router.post('/slots_by_floor', jwtAuth, requireRole('staff', 'admin', 'super-admin'), async (req, res) => {
     const { floor } = req.body;
 
