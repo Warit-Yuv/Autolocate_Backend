@@ -5,11 +5,11 @@ SELECT ps.parking_slot_id, ps.floor, ps.slot_type,
              LEFT JOIN (
                  SELECT pl.parking_slot_id, rt.license_number
                  FROM parking_log pl
-                 JOIN rfid_tag rt ON rt.RFID_TID = pl.scanned_RFID_TID
+                JOIN rfid_tag rt ON rt.RFID_TID = pl.scanned_RFID_TID
                  WHERE pl.recorded_time = (
                      SELECT MAX(recorded_time) FROM parking_log pl2 WHERE pl2.parking_slot_id = pl.parking_slot_id
                  )
-             ) latest ON latest.parking_slot_id = ps.parking_slot_id
+             ) AS latest ON latest.parking_slot_id = ps.parking_slot_id
              WHERE ps.floor = 1;
 
 -- SELECT gad.direction AS vehicleDirection, gad.time_stamp, gad.gate_name,

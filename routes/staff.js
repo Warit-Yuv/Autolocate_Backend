@@ -174,8 +174,7 @@ router.post('/slots_by_floor', jwtAuth, requireRole('staff', 'admin', 'super-adm
 });
 
 router.post('/parking_slot_scan', jwtAuth, requireRole('staff', 'admin', 'super-admin'), async (req, res) => {
-    const { slotId, tid, epc, note } = req.body;
-    const staffId = req.user.staff_id;
+    const { slotId, tid, epc, note, staffId} = req.body;
 
     if (!slotId || !tid || !epc) return res.status(400).json({ error: 'Missing required fields' });
 
