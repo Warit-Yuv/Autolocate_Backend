@@ -140,6 +140,56 @@ router.post('/guest_management', jwtAuth, requireRole('staff', 'admin', 'super-a
     }
 }
 );
+router.post('/slots_by_floor', jwtAuth, requireRole('staff', 'admin', 'super-admin'), async (req, res) => {
+    const { floor } = req.body;
+
+    if (!floor) return res.status(400).json({ error: 'floor is required' });
+
+    try {
+        // Query slots on the floor
+        const [slots] = await staffPool.execute(
+            `SELECT ps.parking_slot_id, ps.floor, ps.slot_type, 
+                    rt.license_number 
+             FROM parking_slot ps
+             LEFT JOIN (
+                 SELECT pl.parking_slot_id, rt.license_number
+                 FROM parking_log pl
+                 JOIN rfid_tag rt ON rt.RFID_TID = pl.scanned_RFID_TID
+                 WHERE pl.recorded_time = (
+                     SELECT MAX(recorded_time) FROM parking_log pl2 WHERE pl2.parking_slot_id = pl.parking_slot_id
+                 )
+             ) latest ON latest.parking_slot_id = ps.parking_slot_id
+             WHERE ps.floor = ?`,
+            [floor]
+        );
+
+        res.status(200).json({ slots });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error fetching slots' });
+    }
+});
+
+router.post('/parking_slot_scan', jwtAuth, requireRole('staff', 'admin', 'super-admin'), async (req, res) => {
+    const { slotId, tid, epc, note } = req.body;
+    const staffId = req.user.staff_id;
+
+    if (!slotId || !tid || !epc) return res.status(400).json({ error: 'Missing required fields' });
+
+    try {
+        await staffPool.execute(
+            `INSERT INTO Parking_Log 
+                (recorded_time, note, scanned_RFID_TID, scanned_EPC, parking_slot_ID, staff_id)
+             VALUES (NOW(), ?, ?, ?, ?, ?)`,
+            [note || 'Vehicle matches slot.', tid, epc, slotId, staffId]
+        );
+
+        res.status(200).json({ message: 'Parking log inserted successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error inserting parking log' });
+    }
+});
 
 
 export default router
