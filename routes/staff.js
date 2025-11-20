@@ -139,7 +139,10 @@ router.post('/guest_management', jwtAuth, requireRole('staff', 'admin', 'super-a
             .json({ error: 'Server error while saving guest visit' });
     }
 });
-  
+
+// Retrieve parking slots by floor (staff only)
+// https://testapi.notonoty.me/api/staff/slots_by_floor
+// Request body: { floor: '1' }
 router.post('/slots_by_floor', jwtAuth, requireRole('staff', 'admin', 'super-admin'), async (req, res) => {
     const { floor } = req.body;
 
@@ -149,7 +152,7 @@ router.post('/slots_by_floor', jwtAuth, requireRole('staff', 'admin', 'super-adm
         // Query slots on the floor
         const [slots] = await staffPool.execute(
             `SELECT ps.parking_slot_id, ps.floor, ps.slot_type, 
-                    rt.license_number 
+                    latest.license_number 
              FROM parking_slot ps
              LEFT JOIN (
                  SELECT pl.parking_slot_id, rt.license_number
@@ -158,7 +161,7 @@ router.post('/slots_by_floor', jwtAuth, requireRole('staff', 'admin', 'super-adm
                  WHERE pl.recorded_time = (
                      SELECT MAX(recorded_time) FROM parking_log pl2 WHERE pl2.parking_slot_id = pl.parking_slot_id
                  )
-             ) latest ON latest.parking_slot_id = ps.parking_slot_id
+             ) AS latest ON latest.parking_slot_id = ps.parking_slot_id
              WHERE ps.floor = ?`,
             [floor]
         );
