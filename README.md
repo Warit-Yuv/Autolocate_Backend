@@ -96,6 +96,46 @@ FRONTEND_ORIGIN=http://localhost:3000,https://your-frontend-domain.com
 # JWT_SEND_IN_BODY=true
 ```
 
+### Example:
+
+```env
+PORT=3001
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=CondoParkingDB
+
+# TENANT_DB_USER=tenant_user
+# TENANT_DB_PASS=tenant_pass
+# use root for development convenience
+TENANT_DB_USER="tenantpool"
+TENANT_DB_PASS="tenant_secure_password1"
+
+STAFF_DB_USER="staffpool"
+STAFF_DB_PASS="staff_secure_password1"
+
+ADMIN_DB_USER="adminpool"
+ADMIN_DB_PASS="admin_secure_password1"
+
+# JWT / Cookie configuration
+JWT_SECRET="Super_Long_And_Complicated_JWT_Secret_key฿_&%$#@!~^*()_+{}|:<>?-=[];',./"
+JWT_EXPIRES_IN=15m
+JWT_COOKIE_NAME=auth_token
+JWT_COOKIE_MAX_AGE_MS=900000
+
+NODE_ENV="production"
+# NODE_ENV="development"
+# Set to 'true' to include JWT token in response body for frontend use (development/testing
+
+
+# Cookie/CORS behavior (production)
+# FRONTEND_ORIGIN must match the actual frontend origin (protocol + host + port)
+FRONTEND_ORIGIN=http://localhost:3000
+JWT_SAMESITE=none       # use 'none' for cross-site cookies
+COOKIE_SECURE=true      # must be true when JWT_SAMESITE=none (browsers require Secure)
+COOKIE_DOMAIN=.notonoty.me # cookie available across subdomains.
+```
+
 ## API Endpoints
 
 All API endpoints are prefixed with `/api`.
@@ -291,7 +331,7 @@ All API endpoints are prefixed with `/api`.
 
 ## Notes
 
-- **Live API Endpoint**: The backend is deployed and accessible at `https://testapi.notonoty.me/`. You can use this for testing if you don't want to run the server locally.
+- **Live API Endpoint**: The backend is deployed and accessible at `https://testapi.notonoty.me/`. You can use this for testing if you don't want to run the server locally. (likely not available outside the demo period)
 - **Local Development**: By default, the server runs on `http://localhost:3001`.
 - **Security**:
     - Passwords are hashed using `bcrypt` before storage.
